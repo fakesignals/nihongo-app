@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { db } from '../db'
 import { dueLabel, State } from '../srs'
 import type { Word } from '../types'
+import Furigana from '../components/Furigana'
 
 export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: Word) => void }) {
   const [query, setQuery] = useState('')
@@ -68,23 +69,23 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
         )}
         {filtered.map(w => (
           <article key={w.id} className="word-card" onClick={() => onEdit(w)}>
-            <div>
-              <div className="word-jp">{w.jp} <span className="reading">{w.reading}</span></div>
-              <div className="meaning">{w.meaning}{w.polite ? <> · <b>{w.polite}</b></> : null}</div>
-              <div className="meta">
-                <span className="tag">{w.category || '기타'}</span>
-                <span className={`tag ${w.state === State.New ? 'new-tag' : w.due <= Date.now() ? 'due-tag' : ''}`}>
-                  {dueLabel(w)}
-                </span>
-              </div>
+            <div className="wc-top">
+              <div className="word-jp"><Furigana jp={w.jp} reading={w.reading} /></div>
+              <button
+                className={`fav ${w.fav ? 'active' : ''}`}
+                aria-label="즐겨찾기"
+                onClick={e => { e.stopPropagation(); toggleFav(w) }}
+              >
+                <svg viewBox="0 0 24 24" fill={w.fav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8"><path d="m12 3 2.78 5.63 6.22.9-4.5 4.39 1.06 6.2L12 17.2l-5.56 2.92 1.06-6.2L3 9.53l6.22-.9L12 3Z"/></svg>
+              </button>
             </div>
-            <button
-              className={`fav ${w.fav ? 'active' : ''}`}
-              aria-label="즐겨찾기"
-              onClick={e => { e.stopPropagation(); toggleFav(w) }}
-            >
-              <svg viewBox="0 0 24 24" fill={w.fav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8"><path d="m12 3 2.78 5.63 6.22.9-4.5 4.39 1.06 6.2L12 17.2l-5.56 2.92 1.06-6.2L3 9.53l6.22-.9L12 3Z"/></svg>
-            </button>
+            <div className="meaning">{w.meaning}{w.polite ? <> · <b>{w.polite}</b></> : null}</div>
+            <div className="meta">
+              <span className="tag">{w.category || '기타'}</span>
+              <span className={`tag meta-right ${w.state === State.New ? 'new-tag' : w.due <= Date.now() ? 'due-tag' : ''}`}>
+                {dueLabel(w)}
+              </span>
+            </div>
           </article>
         ))}
       </div>

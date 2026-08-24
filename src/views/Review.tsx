@@ -3,6 +3,7 @@ import { db } from '../db'
 import { previewIntervals, rate, Rating, State, type Grade } from '../srs'
 import { bumpIntroducedToday, introducedToday, loadSettings, saveSettings } from '../store'
 import type { ReviewMode, ReviewScope, Word } from '../types'
+import Furigana from '../components/Furigana'
 
 // 학습 단계(Again 직후 등) 카드는 몇 분 뒤가 만기여도 세션이 끊기지 않게 이어서 보여줌
 const LEARN_AHEAD_MS = 15 * 60 * 1000
@@ -148,12 +149,19 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
             <div className={`question ${front.length > 7 ? 'small' : ''}`}>{front}</div>
             {revealed && (
               <div className="answer">
-                <div className="answer-reading">{current.reading}</div>
-                <div className="answer-main">
-                  {mode === 'jp-ko'
-                    ? current.meaning
-                    : current.jp + (current.polite ? ` · ${current.polite}` : '')}
-                </div>
+                {mode === 'jp-ko' ? (
+                  <>
+                    {current.reading && current.reading !== current.jp && (
+                      <div className="answer-reading">{current.reading}</div>
+                    )}
+                    <div className="answer-main">{current.meaning}</div>
+                  </>
+                ) : (
+                  <div className="answer-main jp">
+                    <Furigana jp={current.jp} reading={current.reading} />
+                    {current.polite ? <span className="answer-polite"> · {current.polite}</span> : null}
+                  </div>
+                )}
                 {current.example && <div className="example">{current.example}</div>}
               </div>
             )}

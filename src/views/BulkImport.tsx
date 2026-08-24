@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { db } from '../db'
 import { makeWord, type WordInput } from '../store'
 import type { Word } from '../types'
+import Furigana from '../components/Furigana'
 
 interface ParsedRow extends WordInput {
   duplicate: boolean
@@ -102,8 +103,7 @@ export default function BulkImport({ words, toast }: { words: Word[]; toast: (m:
           <div className="preview-list">
             {rows.map((r, i) => (
               <div key={i} className={`preview-item ${r.duplicate ? 'dup' : ''}`}>
-                <b>{r.jp}</b>
-                {r.reading && <span className="p-reading">{r.reading}</span>}
+                <b><Furigana jp={r.jp} reading={r.reading || ''} /></b>
                 <span className="p-meaning">{r.meaning || '뜻 없음'}</span>
                 {r.duplicate && <span className="p-flag">중복</span>}
                 {!r.duplicate && r.incomplete && <span className="p-flag">뜻을 입력하세요</span>}
