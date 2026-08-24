@@ -142,20 +142,7 @@ rt{font-size:44%;font-weight:650;color:var(--accent);font-family:-apple-system,B
 .fav.active{color:var(--star);background:var(--star-bg)}
 .fav svg{width:21px;height:21px}
 /* ---- 발음(TTS) 버튼 ---- */
-.wc-left{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
 .wc-jp{display:flex;align-items:flex-start;gap:2px;min-width:0}
-/* ---- 고저 악센트 ---- */
-.pitch{display:inline-flex;align-items:flex-end;font-size:13px;font-weight:650;color:var(--text-2);line-height:1;margin:0 0 3px;white-space:nowrap;max-width:100%;overflow:hidden}
-.pitch-num{color:var(--accent);font-size:12px;font-weight:800;margin-right:6px;letter-spacing:-.06em;align-self:center}
-.pm{position:relative;padding:4px 1px;border-top:2px solid transparent;border-bottom:2px solid transparent}
-.pm.hi{border-top-color:var(--accent)}
-.pm.lo{border-bottom-color:color-mix(in srgb,var(--muted) 42%,transparent)}
-.pm.drop:after{content:"";position:absolute;right:-1px;top:0;bottom:0;border-right:2px solid var(--accent)}
-.pm.particle{color:var(--faint);opacity:.7}
-.pitch-lg{font-size:18px}
-.pitch-lg .pitch-num{font-size:16px}
-.pitch-lg .pm{padding:5px 2px}
-.answer-pitch{margin-top:12px;display:flex;justify-content:center}
 .speaker{border:0;background:transparent;color:var(--faint);width:40px;height:40px;border-radius:13px;display:inline-grid;place-items:center;flex:none;vertical-align:middle;margin-top:7px;transition:.15s;-webkit-tap-highlight-color:transparent}
 .speaker svg{width:22px;height:22px}
 .speaker:active{color:var(--accent);background:var(--accent-soft);transform:scale(.94)}

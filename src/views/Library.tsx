@@ -5,16 +5,9 @@ import { loadSettings, saveSettings } from '../store'
 import type { Word } from '../types'
 import Furigana from '../components/Furigana'
 import Speaker from '../components/Speaker'
-import PitchLine from '../components/PitchLine'
 import { speakText } from '../speak'
 
-export default function Library({
-  words, onEdit, showPitch
-}: {
-  words: Word[]
-  onEdit: (w: Word) => void
-  showPitch: boolean
-}) {
+export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: Word) => void }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('전체')
   const [onlyFav, setOnlyFav] = useState(false)
@@ -113,14 +106,9 @@ export default function Library({
           return (
             <article key={w.id} className="word-card" onClick={() => onEdit(w)}>
               <div className="wc-top">
-                <div className="wc-left">
-                  <div className="wc-jp">
-                    <div className="word-jp"><Furigana jp={w.jp} reading={w.reading} /></div>
-                    <Speaker text={speakText(w)} />
-                  </div>
-                  {showPitch && w.accent?.length ? (
-                    <PitchLine reading={w.reading || w.jp} accents={w.accent} />
-                  ) : null}
+                <div className="wc-jp">
+                  <div className="word-jp"><Furigana jp={w.jp} reading={w.reading} /></div>
+                  <Speaker text={speakText(w)} />
                 </div>
                 {masked ? (
                   <button

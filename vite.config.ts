@@ -8,21 +8,6 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      workbox: {
-        // 3MB 액센트 사전은 설치 시 미리 받지 않고 처음 필요할 때만 받아서 캐시
-        globIgnores: ['**/pitch-accents.txt', '**/PITCH-ACCENT-LICENSE.txt'],
-        runtimeCaching: [
-          {
-            urlPattern: /pitch-accents[.]txt$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'pitch-dict',
-              expiration: { maxEntries: 1, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] }
-            }
-          }
-        ]
-      },
       includeAssets: ['icon-180.png', 'icon-512.png'],
       manifest: {
         name: 'Nihongo Pocket — 일본어 기초노트',

@@ -27,13 +27,10 @@ export default function EditorSheet({
     e.preventDefault()
     const data = { jp, reading, meaning, category, polite, example }
     if (word) {
-      const jpChanged = word.jp !== jp.trim() || word.reading !== reading.trim()
       await db.words.update(word.id, {
         jp: jp.trim(), reading: reading.trim(), meaning: meaning.trim(),
         category: category.trim() || '기타', polite: polite.trim(), example: example.trim()
       })
-      // 표기·읽기가 바뀌면 고저 악센트를 다시 조회하도록 지움
-      if (jpChanged) await db.words.where('id').equals(word.id).modify(w => { delete w.accent })
       toast('수정했어요')
     } else {
       await db.words.add(makeWord(data))
