@@ -5,6 +5,7 @@ import { bumpIntroducedToday, introducedToday, loadSettings, saveSettings } from
 import type { ReviewMode, ReviewScope, Word } from '../types'
 import Furigana from '../components/Furigana'
 import Speaker from '../components/Speaker'
+import PitchLine from '../components/PitchLine'
 import { speak, speakText } from '../speak'
 
 // 학습 단계(Again 직후 등) 카드는 몇 분 뒤가 만기여도 세션이 끊기지 않게 이어서 보여줌
@@ -19,7 +20,13 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-export default function Review({ words, toast }: { words: Word[]; toast: (m: string) => void }) {
+export default function Review({
+  words, toast, showPitch
+}: {
+  words: Word[]
+  toast: (m: string) => void
+  showPitch: boolean
+}) {
   const [mode, setMode] = useState<ReviewMode>(() => loadSettings().mode)
   const [scope, setScope] = useState<ReviewScope>('today')
   const [category, setCategory] = useState('전체')
@@ -160,9 +167,13 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
               <div className="answer">
                 {mode === 'jp-ko' ? (
                   <>
-                    {current.reading && current.reading !== current.jp && (
+                    {showPitch && current.accent?.length ? (
+                      <div className="answer-reading">
+                        <PitchLine reading={current.reading || current.jp} accents={current.accent} className="pitch-lg" />
+                      </div>
+                    ) : current.reading && current.reading !== current.jp ? (
                       <div className="answer-reading">{current.reading}</div>
-                    )}
+                    ) : null}
                     <div className="answer-main">{current.meaning}</div>
                   </>
                 ) : (
@@ -170,6 +181,11 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
                     <Furigana jp={current.jp} reading={current.reading} />
                     {current.polite ? <span className="answer-polite"> · {current.polite}</span> : null}
                     <Speaker text={speakText(current)} className="speaker-lg" />
+                    {showPitch && current.accent?.length ? (
+                      <div className="answer-pitch">
+                        <PitchLine reading={current.reading || current.jp} accents={current.accent} className="pitch-lg" />
+                      </div>
+                    ) : null}
                   </div>
                 )}
                 {current.example && (

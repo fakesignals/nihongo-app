@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { State } from './srs'
 import { introducedToday, loadSettings, migrateFromV1 } from './store'
+import { lookupAccents } from './pitch'
 import type { Word } from './types'
 import Library from './views/Library'
 import Review from './views/Review'
@@ -17,6 +18,7 @@ export default function App() {
   // undefined = 닫힘, null = 새 단어, Word = 수정
   const [editing, setEditing] = useState<Word | null | undefined>(undefined)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [showPitch, setShowPitch] = useState(() => loadSettings().showPitch)
   const [toastMsg, setToastMsg] = useState('')
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
@@ -37,6 +39,27 @@ export default function App() {
       }
     })()
   }, [])
+
+  // 아직 조회하지 않은 단어의 고저 악센트를 사전에서 채움 (오프라인이면 다음 실행에 재시도)
+  useEffect(() => {
+    if (!showPitch || !words.length) return
+    const missing = words.filter(w => w.accent === undefined)
+    if (!missing.length) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const found = await lookupAccents(missing)
+        if (cancelled) return
+        await db.transaction('rw', db.words, () =>
+          Promise.all(missing.map(w => db.words.update(w.id, { accent: found.get(w.id) ?? [] })))
+        )
+        if (found.size) toast(`피치 액센트 ${found.size}개를 찾았어요`)
+      } catch {
+        // 사전을 못 받았을 뿐이니 조용히 넘어감
+      }
+    })()
+    return () => { cancelled = true }
+  }, [words, showPitch])
 
   const now = Date.now()
   const dueCount = useMemo(
@@ -74,9 +97,9 @@ export default function App() {
           </div>
         </section>
 
-        {view === 'library' && <Library words={words} onEdit={w => setEditing(w)} />}
+        {view === 'library' && <Library words={words} onEdit={w => setEditing(w)} showPitch={showPitch} />}
         {view === 'import' && <BulkImport words={words} toast={toast} />}
-        {view === 'review' && <Review words={words} toast={toast} />}
+        {view === 'review' && <Review words={words} toast={toast} showPitch={showPitch} />}
       </main>
 
       <nav className="bottom-nav">
@@ -102,7 +125,12 @@ export default function App() {
         <EditorSheet word={editing} words={words} onClose={() => setEditing(undefined)} toast={toast} />
       )}
       {settingsOpen && (
-        <SettingsSheet words={words} onClose={() => setSettingsOpen(false)} toast={toast} />
+        <SettingsSheet
+          words={words}
+          onClose={() => setSettingsOpen(false)}
+          toast={toast}
+          onSettingsChange={() => setShowPitch(loadSettings().showPitch)}
+        />
       )}
 
       <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>

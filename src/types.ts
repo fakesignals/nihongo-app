@@ -11,6 +11,8 @@ export interface Word {
   fav: 0 | 1
   createdAt: number
   card: Card
+  /** 고저 악센트. undefined = 아직 조회 안 함, [] = 사전에 없음 */
+  accent?: number[]
   // card.due / card.state 미러 — IndexedDB 인덱스 쿼리용
   due: number
   state: number
@@ -28,4 +30,6 @@ export interface Settings {
   autoSpeak: boolean
   /** 음성 재생 속도 (0.6~1.2) */
   speakRate: number
+  /** 고저 악센트 선 그래프 표시 */
+  showPitch: boolean
 }

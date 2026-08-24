@@ -33,3 +33,8 @@ localStorage의 데이터를 자동으로 IndexedDB로 가져온다. 구버전 J
 설정 → 백업 가져오기로 복원 가능.
 
 구버전 코드는 `legacy/`에 보존되어 있다.
+
+## 데이터 출처
+
+- 고저 악센트: [Kanjium](https://github.com/mifunetoshiro/kanjium) (CC BY-SA 4.0) — EDRDG의 EDICT/KANJIDIC 기반. 원문은 `public/PITCH-ACCENT-LICENSE.txt` 참고.
+- 발음 음성: 기기 내장 음성 (Web Speech API). 별도 데이터 없음.

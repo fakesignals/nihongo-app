@@ -6,11 +6,12 @@ import type { Word } from '../types'
 import { hasJaVoice, speak, speechSupported } from '../speak'
 
 export default function SettingsSheet({
-  words, onClose, toast
+  words, onClose, toast, onSettingsChange
 }: {
   words: Word[]
   onClose: () => void
   toast: (m: string) => void
+  onSettingsChange: () => void
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [newPerDay, setNewPerDay] = useState(() => loadSettings().newPerDay)
@@ -18,6 +19,8 @@ export default function SettingsSheet({
   const [autoSpeak, setAutoSpeak] = useState(() => loadSettings().autoSpeak)
   const [speakRate, setSpeakRate] = useState(() => loadSettings().speakRate)
   const [voiceOk, setVoiceOk] = useState(() => hasJaVoice())
+  const [showPitch, setShowPitch] = useState(() => loadSettings().showPitch)
+  const withAccent = words.filter(w => w.accent?.length).length
 
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted).catch(() => setPersisted(null))
@@ -79,6 +82,18 @@ export default function SettingsSheet({
     setSpeakRate(r)
     saveSettings({ ...loadSettings(), speakRate: r })
     speak('はつおん', r)
+  }
+
+  const changeShowPitch = (v: boolean) => {
+    setShowPitch(v)
+    saveSettings({ ...loadSettings(), showPitch: v })
+    onSettingsChange()
+  }
+
+  // accent 필드를 지우면 앱이 사전을 다시 훑어서 채움
+  const rescanPitch = async () => {
+    await db.words.toCollection().modify(w => { delete w.accent })
+    toast('액센트를 다시 조회할게요')
   }
 
   const changeNewPerDay = (n: number) => {
@@ -143,6 +158,28 @@ export default function SettingsSheet({
           <button className="soft-btn" onClick={() => speak('こんにちは。にほんごのはつおんテストです。')}>
             테스트 재생
           </button>
+        </div>
+
+        <div className="settings-section">
+          <h4>고저 악센트 (피치)</h4>
+          <p>
+            일본어 단어의 높낮이를 교재식 선 그래프로 보여줍니다. 단어 {words.length}개 중{' '}
+            <b>{withAccent}개</b>에 정보가 있어요. 사전(약 3MB)은 처음 필요할 때 한 번만 내려받고
+            이후에는 오프라인에서도 동작합니다.
+          </p>
+          <div className="settings-row">
+            <button
+              className="soft-btn"
+              style={showPitch ? { background: 'var(--ink)', color: '#fff', borderColor: 'var(--ink)' } : undefined}
+              onClick={() => changeShowPitch(!showPitch)}
+            >
+              {showPitch ? '피치 표시 ON' : '피치 표시 OFF'}
+            </button>
+            <button className="soft-btn" onClick={rescanPitch}>다시 조회</button>
+          </div>
+          <p className="credit">
+            액센트 데이터: Kanjium (CC BY-SA 4.0) · EDRDG EDICT 기반
+          </p>
         </div>
 
         <div className="settings-section">
