@@ -107,6 +107,12 @@ h1{font-size:29px;line-height:1.08;letter-spacing:-.045em;margin:0;font-weight:8
 .section-head{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 12px}
 .section-head h2{font-size:15px;margin:0;letter-spacing:-.02em;font-weight:800}
 .section-head button{background:none;border:0;color:var(--accent);font-size:13px;font-weight:750;padding:4px}
+.section-head button.switch{display:inline-flex;align-items:center;gap:8px;color:var(--muted)}
+.section-head button.switch.on{color:var(--accent)}
+.switch-track{width:36px;height:21px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);position:relative;transition:.18s;flex:none}
+.switch.on .switch-track{background:var(--accent);border-color:transparent}
+.switch-knob{position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow-sm);transition:.18s transform}
+.switch.on .switch-knob{transform:translateX(15px);background:#fff}
 .chips{display:flex;gap:7px;overflow:auto;padding:0 0 4px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--text-2);padding:9px 14px;border-radius:999px;font-size:13px;font-weight:700;transition:.15s}
@@ -120,7 +126,13 @@ h1{font-size:29px;line-height:1.08;letter-spacing:-.045em;margin:0;font-weight:8
 .word-jp{font-size:23px;font-weight:800;letter-spacing:-.02em;font-family:var(--jp-serif);line-height:1.15;padding-top:10px}
 ruby{ruby-align:center}
 rt{font-size:44%;font-weight:650;color:var(--accent);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Apple SD Gothic Neo",sans-serif;letter-spacing:.02em;padding-bottom:2px}
-.meaning{font-size:14px;color:var(--text-2);margin-top:5px;font-weight:650}
+/* 뜻: 단어 오른쪽(카드 가운데)에 배치. 가리기 모드에선 점 3개 알약으로 대체 */
+.meaning{flex:1;min-width:0;font-size:14px;color:var(--text-2);font-weight:650;text-align:right;line-height:1.45;padding-top:14px;word-break:keep-all}
+.meaning.revealed{animation:rise .18s ease;cursor:pointer}
+.meaning-mask{flex:none;margin:13px 0 0 auto;height:26px;padding:0 13px;border:1px dashed color-mix(in srgb,var(--ink) 20%,transparent);background:var(--surface-2);border-radius:999px;display:flex;align-items:center;gap:5px;transition:.15s;-webkit-tap-highlight-color:transparent}
+.meaning-mask i{width:5px;height:5px;border-radius:50%;background:var(--faint)}
+.meaning-mask:active{background:var(--accent-soft);border-color:transparent;transform:scale(.96)}
+.meaning-mask:active i{background:var(--accent-soft-fg)}
 .meta{font-size:11px;color:var(--faint);margin-top:9px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .meta-right{margin-left:auto}
 .tag{background:var(--tag-bg);border-radius:999px;padding:4px 9px;color:var(--tag-fg);font-weight:650}
