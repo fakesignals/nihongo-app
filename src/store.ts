@@ -40,7 +40,7 @@ export function withCard(word: Word, card: Card): Word {
 
 // ---- 설정 ----
 const SETTINGS_KEY = 'nihongo-pocket-settings'
-const defaultSettings: Settings = { newPerDay: 10, mode: 'jp-ko', hideMeaning: false }
+const defaultSettings: Settings = { newPerDay: 10, mode: 'jp-ko', hideMeaning: false, autoSpeak: true, speakRate: 0.9 }
 
 export function loadSettings(): Settings {
   try {

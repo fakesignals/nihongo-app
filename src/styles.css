@@ -141,6 +141,17 @@ rt{font-size:44%;font-weight:650;color:var(--accent);font-family:-apple-system,B
 .fav{border:0;background:transparent;width:40px;height:40px;border-radius:13px;display:grid;place-items:center;color:var(--faint);margin:-2px -6px 0 0;flex:none}
 .fav.active{color:var(--star);background:var(--star-bg)}
 .fav svg{width:21px;height:21px}
+/* ---- 발음(TTS) 버튼 ---- */
+.wc-jp{display:flex;align-items:flex-start;gap:2px;min-width:0}
+.speaker{border:0;background:transparent;color:var(--faint);width:34px;height:34px;border-radius:11px;display:inline-grid;place-items:center;flex:none;vertical-align:middle;margin-top:9px;transition:.15s;-webkit-tap-highlight-color:transparent}
+.speaker svg{width:18px;height:18px}
+.speaker:active{color:var(--accent);background:var(--accent-soft);transform:scale(.94)}
+.speaker-lg{width:44px;height:44px;border-radius:15px;margin:12px 0 0;color:var(--accent);background:var(--accent-soft)}
+.speaker-lg svg{width:22px;height:22px}
+.answer-main .speaker-lg{margin:0 0 0 8px;width:36px;height:36px;border-radius:12px}
+.answer-main .speaker-lg svg{width:19px;height:19px}
+.speaker-inline{width:28px;height:28px;margin:0 0 0 4px;border-radius:9px}
+.speaker-inline svg{width:15px;height:15px}
 .empty{background:var(--surface);border:1px dashed color-mix(in srgb,var(--ink) 15%,transparent);padding:34px 20px;text-align:center;border-radius:22px;color:var(--muted);font-size:14px;line-height:1.7}
 
 /* ---- fab & nav ---- */

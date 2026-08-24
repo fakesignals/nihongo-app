@@ -4,6 +4,8 @@ import { previewIntervals, rate, Rating, State, type Grade } from '../srs'
 import { bumpIntroducedToday, introducedToday, loadSettings, saveSettings } from '../store'
 import type { ReviewMode, ReviewScope, Word } from '../types'
 import Furigana from '../components/Furigana'
+import Speaker from '../components/Speaker'
+import { speak, speakText } from '../speak'
 
 // 학습 단계(Again 직후 등) 카드는 몇 분 뒤가 만기여도 세션이 끊기지 않게 이어서 보여줌
 const LEARN_AHEAD_MS = 15 * 60 * 1000
@@ -97,6 +99,12 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
     setRevealed(false)
   }
 
+  // 정답 공개는 사용자 탭이라, 이 시점의 자동 재생은 iOS에서도 허용됨
+  const doReveal = () => {
+    setRevealed(true)
+    if (current && loadSettings().autoSpeak) speak(speakText(current))
+  }
+
   const front = current ? (mode === 'jp-ko' ? current.jp : current.meaning) : ''
 
   return (
@@ -147,6 +155,7 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
               {mode === 'jp-ko' ? '뜻을 떠올려 보세요' : '일본어를 떠올려 보세요'}
             </div>
             <div className={`question ${front.length > 7 ? 'small' : ''}`}>{front}</div>
+            {mode === 'jp-ko' && <Speaker text={speakText(current)} className="speaker-lg" />}
             {revealed && (
               <div className="answer">
                 {mode === 'jp-ko' ? (
@@ -160,14 +169,20 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
                   <div className="answer-main jp">
                     <Furigana jp={current.jp} reading={current.reading} />
                     {current.polite ? <span className="answer-polite"> · {current.polite}</span> : null}
+                    <Speaker text={speakText(current)} className="speaker-lg" />
                   </div>
                 )}
-                {current.example && <div className="example">{current.example}</div>}
+                {current.example && (
+                  <div className="example">
+                    {current.example}
+                    <Speaker text={current.example} className="speaker-inline" label="예문 듣기" />
+                  </div>
+                )}
               </div>
             )}
           </div>
           {!revealed ? (
-            <button className="reveal" onClick={() => setRevealed(true)}>정답 보기</button>
+            <button className="reveal" onClick={doReveal}>정답 보기</button>
           ) : (
             <div className="ratings">
               <button className="rate again" onClick={() => onRate(Rating.Again)}>

@@ -24,4 +24,8 @@ export interface Settings {
   mode: ReviewMode
   /** 단어장에서 뜻을 가리고 탭했을 때만 보여줌 */
   hideMeaning: boolean
+  /** 복습에서 정답을 공개할 때 일본어 발음을 자동 재생 */
+  autoSpeak: boolean
+  /** 음성 재생 속도 (0.6~1.2) */
+  speakRate: number
 }

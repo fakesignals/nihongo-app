@@ -3,6 +3,7 @@ import { db } from '../db'
 import { seedWords } from '../seed'
 import { exportJSON, loadSettings, makeWord, parseBackup, saveSettings } from '../store'
 import type { Word } from '../types'
+import { hasJaVoice, speak, speechSupported } from '../speak'
 
 export default function SettingsSheet({
   words, onClose, toast
@@ -14,9 +15,21 @@ export default function SettingsSheet({
   const fileRef = useRef<HTMLInputElement>(null)
   const [newPerDay, setNewPerDay] = useState(() => loadSettings().newPerDay)
   const [persisted, setPersisted] = useState<boolean | null>(null)
+  const [autoSpeak, setAutoSpeak] = useState(() => loadSettings().autoSpeak)
+  const [speakRate, setSpeakRate] = useState(() => loadSettings().speakRate)
+  const [voiceOk, setVoiceOk] = useState(() => hasJaVoice())
 
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted).catch(() => setPersisted(null))
+  }, [])
+
+  // 음성 목록은 비동기로 채워져서 한 박자 뒤에 다시 확인
+  useEffect(() => {
+    if (!speechSupported) return
+    const check = () => setVoiceOk(hasJaVoice())
+    speechSynthesis.addEventListener('voiceschanged', check)
+    const t = setTimeout(check, 400)
+    return () => { speechSynthesis.removeEventListener('voiceschanged', check); clearTimeout(t) }
   }, [])
 
   const doExport = () => {
@@ -57,6 +70,17 @@ export default function SettingsSheet({
     }
   }
 
+  const changeAutoSpeak = (v: boolean) => {
+    setAutoSpeak(v)
+    saveSettings({ ...loadSettings(), autoSpeak: v })
+  }
+
+  const changeSpeakRate = (r: number) => {
+    setSpeakRate(r)
+    saveSettings({ ...loadSettings(), speakRate: r })
+    speak('はつおん', r)
+  }
+
   const changeNewPerDay = (n: number) => {
     setNewPerDay(n)
     saveSettings({ ...loadSettings(), newPerDay: n })
@@ -86,6 +110,39 @@ export default function SettingsSheet({
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="settings-section">
+          <h4>발음 (음성 재생)</h4>
+          <p>
+            {voiceOk
+              ? '단어 옆 스피커 버튼을 누르면 읽어줍니다. 한자 오독을 피하려고 읽기(가나)를 우선으로 발음해요.'
+              : '이 브라우저에서 일본어 음성을 찾지 못했어요. iPhone은 Safari로 열면 내장 음성(Kyoko)을 사용합니다.'}
+          </p>
+          <div className="settings-row">
+            <button
+              className="soft-btn"
+              style={autoSpeak ? { background: 'var(--ink)', color: '#fff', borderColor: 'var(--ink)' } : undefined}
+              onClick={() => changeAutoSpeak(!autoSpeak)}
+            >
+              {autoSpeak ? '정답 공개 시 자동 재생 ON' : '자동 재생 OFF'}
+            </button>
+          </div>
+          <div className="settings-row">
+            {([[0.7, '느리게'], [0.9, '보통'], [1.1, '빠르게']] as const).map(([r, label]) => (
+              <button
+                key={label}
+                className="soft-btn"
+                style={speakRate === r ? { background: 'var(--ink)', color: '#fff', borderColor: 'var(--ink)' } : undefined}
+                onClick={() => changeSpeakRate(r)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button className="soft-btn" onClick={() => speak('こんにちは。にほんごのはつおんテストです。')}>
+            테스트 재생
+          </button>
         </div>
 
         <div className="settings-section">

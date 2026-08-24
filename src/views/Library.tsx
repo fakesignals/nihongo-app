@@ -4,6 +4,8 @@ import { dueLabel, State } from '../srs'
 import { loadSettings, saveSettings } from '../store'
 import type { Word } from '../types'
 import Furigana from '../components/Furigana'
+import Speaker from '../components/Speaker'
+import { speakText } from '../speak'
 
 export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: Word) => void }) {
   const [query, setQuery] = useState('')
@@ -104,7 +106,10 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
           return (
             <article key={w.id} className="word-card" onClick={() => onEdit(w)}>
               <div className="wc-top">
-                <div className="word-jp"><Furigana jp={w.jp} reading={w.reading} /></div>
+                <div className="wc-jp">
+                  <div className="word-jp"><Furigana jp={w.jp} reading={w.reading} /></div>
+                  <Speaker text={speakText(w)} />
+                </div>
                 {masked ? (
                   <button
                     className="meaning-mask"
