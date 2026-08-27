@@ -29,6 +29,7 @@ export default function SettingsSheet({
   const [token, setToken] = useState('')
   const [pastedGist, setPastedGist] = useState('')
   const [busy, setBusy] = useState(false)
+  const [theme, setTheme] = useState<Settings['theme']>(() => loadSettings().theme)
   const [jpFont, setJpFont] = useState<Settings['jpFont']>(() => loadSettings().jpFont)
 
   const categories = useMemo(
@@ -180,6 +181,11 @@ export default function SettingsSheet({
     saveSettings({ ...loadSettings(), jpFont: f }) // saveSettings가 문서에 바로 반영한다
   }
 
+  const changeTheme = (t: Settings['theme']) => {
+    setTheme(t)
+    saveSettings({ ...loadSettings(), theme: t })
+  }
+
   // ---- PC → 폰 자동 전송 ----
   const startSending = async () => {
     const t = token.trim()
@@ -268,6 +274,23 @@ export default function SettingsSheet({
         <div className="sheet-head">
           <h3>설정 & 데이터</h3>
           <button className="close-btn" onClick={onClose}>×</button>
+        </div>
+
+        <div className="settings-section">
+          <h4>화면 테마</h4>
+          <p>앱 화면의 밝기를 선택합니다. 이 기기에 선택한 테마가 저장돼요.</p>
+          <div className="settings-row">
+            {([['dark', '다크 모드'], ['light', '라이트 모드']] as const).map(([t, label]) => (
+              <button
+                key={t}
+                className={`soft-btn ${theme === t ? 'active' : ''}`}
+                onClick={() => changeTheme(t)}
+                aria-pressed={theme === t}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="settings-section">

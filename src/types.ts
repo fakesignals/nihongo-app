@@ -20,6 +20,8 @@ export type ReviewMode = 'jp-ko' | 'ko-jp'
 export type ReviewScope = 'today' | 'fav' | 'all'
 
 export interface Settings {
+  /** 앱 화면 색상 테마 */
+  theme: 'light' | 'dark'
   newPerDay: number
   mode: ReviewMode
   /** 단어장에서 뜻을 가리고 탭했을 때만 보여줌 */
