@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../db'
-import { dueLabel, State } from '../srs'
 import { loadSettings, saveSettings } from '../store'
 import type { Word } from '../types'
 import Furigana from '../components/Furigana'
@@ -12,8 +11,10 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
   const [category, setCategory] = useState('전체')
   const [onlyFav, setOnlyFav] = useState(false)
   const [hideMeaning, setHideMeaning] = useState(() => loadSettings().hideMeaning)
+  const [hideWord, setHideWord] = useState(() => loadSettings().hideWord)
   // 가리기 모드에서 탭으로 공개해 둔 카드들
-  const [revealed, setRevealed] = useState<Set<string>>(new Set())
+  const [revealedMeanings, setRevealedMeanings] = useState<Set<string>>(new Set())
+  const [revealedWords, setRevealedWords] = useState<Set<string>>(new Set())
 
   const categories = useMemo(
     () => [...new Set(words.map(w => w.category || '기타'))].sort((a, b) => a.localeCompare(b, 'ko')),
@@ -35,18 +36,26 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
 
   // 목록이 바뀌면(검색·필터) 공개해 둔 것들을 다시 가림
   useEffect(() => {
-    setRevealed(new Set())
+    setRevealedMeanings(new Set())
+    setRevealedWords(new Set())
   }, [query, category, onlyFav])
 
   const toggleHideMeaning = () => {
     const next = !hideMeaning
     setHideMeaning(next)
-    setRevealed(new Set())
+    setRevealedMeanings(new Set())
     saveSettings({ ...loadSettings(), hideMeaning: next })
   }
 
-  const toggleReveal = (id: string) => {
-    setRevealed(prev => {
+  const toggleHideWord = () => {
+    const next = !hideWord
+    setHideWord(next)
+    setRevealedWords(new Set())
+    saveSettings({ ...loadSettings(), hideWord: next })
+  }
+
+  const toggleReveal = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, id: string) => {
+    setter(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -83,15 +92,24 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
         ))}
       </div>
 
-      <div className="section-head">
+      <div className="section-head list-head">
         <h2>{category === '전체' ? '전체 단어' : category} · {filtered.length}</h2>
-        <button
-          className={`switch ${hideMeaning ? 'on' : ''}`}
-          aria-pressed={hideMeaning}
-          onClick={toggleHideMeaning}
-        >
-          뜻 가리기<span className="switch-track"><span className="switch-knob" /></span>
-        </button>
+        <div className="hide-controls">
+          <button
+            className={`switch ${hideWord ? 'on' : ''}`}
+            aria-pressed={hideWord}
+            onClick={toggleHideWord}
+          >
+            단어 가리기<span className="switch-track"><span className="switch-knob" /></span>
+          </button>
+          <button
+            className={`switch ${hideMeaning ? 'on' : ''}`}
+            aria-pressed={hideMeaning}
+            onClick={toggleHideMeaning}
+          >
+            뜻 가리기<span className="switch-track"><span className="switch-knob" /></span>
+          </button>
+        </div>
       </div>
 
       <div className="list">
@@ -102,34 +120,48 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
           </div>
         )}
         {filtered.map(w => {
-          const masked = hideMeaning && !revealed.has(w.id)
+          const meaningMasked = hideMeaning && !revealedMeanings.has(w.id)
+          const wordMasked = hideWord && !revealedWords.has(w.id)
+          const lengthClass = w.jp.length > 8 ? 'is-xlong' : w.jp.length > 5 ? 'is-long' : ''
           return (
             <article key={w.id} className="word-card" onClick={() => onEdit(w)}>
               <div className="wc-main">
                 <div className="wc-jp">
-                  <div className="word-jp"><Furigana jp={w.jp} reading={w.reading} /></div>
-                  <Speaker text={speakText(w)} />
+                  {wordMasked ? (
+                    <button
+                      className="word-mask"
+                      aria-label="단어 보기"
+                      onClick={e => { e.stopPropagation(); toggleReveal(setRevealedWords, w.id) }}
+                    >
+                      <i /><i /><i /><i />
+                    </button>
+                  ) : (
+                    <div
+                      className={`word-jp ${lengthClass} ${hideWord ? 'revealed' : ''}`}
+                      onClick={hideWord ? e => { e.stopPropagation(); toggleReveal(setRevealedWords, w.id) } : undefined}
+                    >
+                      <Furigana jp={w.jp} reading={w.reading} />
+                    </div>
+                  )}
+                  {!wordMasked && <Speaker text={speakText(w)} />}
                 </div>
                 <div className="wc-detail">
-                  {masked ? (
+                  {meaningMasked ? (
                     <button
                       className="meaning-mask"
                       aria-label="뜻 보기"
-                      onClick={e => { e.stopPropagation(); toggleReveal(w.id) }}
+                      onClick={e => { e.stopPropagation(); toggleReveal(setRevealedMeanings, w.id) }}
                     >
                       <i /><i /><i />
                     </button>
                   ) : (
                     <div
                       className={`meaning ${hideMeaning ? 'revealed' : ''}`}
-                      onClick={hideMeaning ? e => { e.stopPropagation(); toggleReveal(w.id) } : undefined}
+                      onClick={hideMeaning ? e => { e.stopPropagation(); toggleReveal(setRevealedMeanings, w.id) } : undefined}
                     >
                       {w.meaning}{w.polite ? <> · <b>{w.polite}</b></> : null}
                     </div>
                   )}
-                  <span className={`tag ${w.state === State.New ? 'new-tag' : w.due <= Date.now() ? 'due-tag' : ''}`}>
-                    {dueLabel(w)}
-                  </span>
                 </div>
                 <button
                   className={`fav ${w.fav ? 'active' : ''}`}

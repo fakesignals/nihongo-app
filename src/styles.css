@@ -111,6 +111,8 @@ h1{font-size:29px;line-height:1.08;letter-spacing:-.045em;margin:0;font-weight:8
 .section-head button{background:none;border:0;color:var(--accent);font-size:13px;font-weight:750;padding:4px}
 .section-head button.switch{display:inline-flex;align-items:center;gap:8px;color:var(--muted)}
 .section-head button.switch.on{color:var(--accent)}
+.hide-controls{display:flex;align-items:center;gap:5px}
+.hide-controls .switch{white-space:nowrap}
 .switch-track{width:36px;height:21px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);position:relative;transition:.18s;flex:none}
 .switch.on .switch-track{background:var(--accent);border-color:transparent}
 .switch-knob{position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow-sm);transition:.18s transform}
@@ -124,18 +126,25 @@ h1{font-size:29px;line-height:1.08;letter-spacing:-.045em;margin:0;font-weight:8
 .list{display:grid;gap:10px;margin-top:14px}
 .word-card{background:var(--surface);border:1px solid var(--line);border-radius:19px;padding:14px 12px 14px 16px;box-shadow:var(--shadow-sm);transition:.16s transform}
 .word-card:active{transform:scale(.99)}
-.wc-main{display:flex;align-items:center;min-height:72px;gap:8px}
-.word-jp{font-size:26px;font-weight:800;letter-spacing:-.025em;font-family:var(--jp-font);line-height:1.25}
+.wc-main{display:flex;align-items:center;min-height:68px;gap:7px}
+.word-jp{font-size:24px;font-weight:800;letter-spacing:-.025em;font-family:var(--jp-font);line-height:1.25;white-space:nowrap;cursor:default}
+.word-jp.is-long{font-size:21px;letter-spacing:-.04em}
+.word-jp.is-xlong{font-size:18px;letter-spacing:-.055em}
+.word-jp.revealed{animation:rise .18s ease;cursor:pointer}
 ruby{ruby-align:center}
 rt{font-size:50%;font-weight:700;color:var(--accent);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Apple SD Gothic Neo",sans-serif;letter-spacing:.02em;padding-bottom:3px}
 /* 뜻: 단어 오른쪽(카드 가운데)에 배치. 가리기 모드에선 점 3개 알약으로 대체 */
-.wc-detail{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:7px}
+.wc-detail{flex:.78;min-width:0;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:7px}
 .meaning{min-width:0;font-size:17px;color:var(--text-2);font-weight:700;text-align:right;line-height:1.35;word-break:keep-all}
 .meaning.revealed{animation:rise .18s ease;cursor:pointer}
 .meaning-mask{flex:none;height:32px;padding:0 16px;border:1px dashed color-mix(in srgb,var(--ink) 20%,transparent);background:var(--surface-2);border-radius:999px;display:flex;align-items:center;gap:5px;transition:.15s;-webkit-tap-highlight-color:transparent}
 .meaning-mask i{width:6px;height:6px;border-radius:50%;background:var(--faint)}
 .meaning-mask:active{background:var(--accent-soft);border-color:transparent;transform:scale(.96)}
 .meaning-mask:active i{background:var(--accent-soft-fg)}
+.word-mask{height:36px;padding:0 16px;border:1px dashed color-mix(in srgb,var(--ink) 20%,transparent);background:var(--surface-2);border-radius:999px;display:flex;align-items:center;gap:5px;transition:.15s;-webkit-tap-highlight-color:transparent}
+.word-mask i{width:6px;height:6px;border-radius:50%;background:var(--faint)}
+.word-mask:active{background:var(--accent-soft);border-color:transparent;transform:scale(.96)}
+.word-mask:active i{background:var(--accent-soft-fg)}
 .tag{background:var(--tag-bg);border-radius:999px;padding:4px 9px;color:var(--tag-fg);font-size:11px;font-weight:700;line-height:1.2}
 .due-tag{background:var(--danger-bg);color:var(--danger-fg)}
 .new-tag{background:var(--accent-soft);color:var(--accent-soft-fg)}
@@ -143,7 +152,7 @@ rt{font-size:50%;font-weight:700;color:var(--accent);font-family:-apple-system,B
 .fav.active{color:var(--star);background:var(--star-bg)}
 .fav svg{width:23px;height:23px}
 /* ---- 발음(TTS) 버튼 ---- */
-.wc-jp{display:flex;align-items:center;gap:3px;min-width:0;flex:1.12}
+.wc-jp{display:flex;align-items:center;gap:2px;min-width:0;flex:1.45}
 .speaker{border:0;background:transparent;color:var(--faint);width:42px;height:42px;border-radius:13px;display:inline-grid;place-items:center;flex:none;vertical-align:middle;transition:.15s;-webkit-tap-highlight-color:transparent}
 .speaker svg{width:24px;height:24px}
 .speaker:active{color:var(--accent);background:var(--accent-soft);transform:scale(.94)}
@@ -164,6 +173,12 @@ rt{font-size:50%;font-weight:700;color:var(--accent);font-family:-apple-system,B
 .nav-btn.active{background:var(--ink);color:var(--bg)}
 .nav-btn svg{width:17px;height:17px}
 .nav-badge{background:var(--accent-2);color:#fff;font-size:10px;font-weight:800;border-radius:999px;padding:2px 6px;min-width:18px}
+
+@media (max-width:420px){
+  .list-head{align-items:flex-start}
+  .hide-controls{align-items:flex-end;flex-direction:column;gap:2px}
+  .hide-controls .switch{padding-block:2px}
+}
 
 /* ---- review ---- */
 .view{margin-top:18px}
