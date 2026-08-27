@@ -105,6 +105,37 @@ export async function mergeWords(incoming: Word[]): Promise<{ added: number; ski
   return { added: fresh.length, skipped: incoming.length - fresh.length }
 }
 
+/** 학습 진도가 아닌, 보내는 쪽이 정하는 내용 */
+const CONTENT_FIELDS = ['jp', 'reading', 'meaning', 'category', 'polite', 'example'] as const
+
+/**
+ * 보내는 쪽(PC)을 원본으로 보고 맞춘다. 내용은 덮어쓰되 학습 진도와 즐겨찾기는 이 기기 것을 지킨다.
+ * 저쪽에서 지운 단어를 여기서 따라 지우지는 않는다.
+ */
+export async function syncWords(incoming: Word[]): Promise<{ added: number; updated: number }> {
+  const byJp = new Map((await db.words.toArray()).map(w => [w.jp, w]))
+  const fresh: Word[] = []
+  const changed: Word[] = []
+  const seen = new Set<string>()
+
+  for (const w of incoming) {
+    if (!w.jp || seen.has(w.jp)) continue
+    seen.add(w.jp)
+    const mine = byJp.get(w.jp)
+    if (!mine) { fresh.push(w); continue }
+    const next = { ...mine }
+    let dirty = false
+    for (const f of CONTENT_FIELDS) {
+      if (w[f] !== mine[f]) { next[f] = w[f]; dirty = true }
+    }
+    if (dirty) changed.push(next)
+  }
+
+  if (fresh.length) await db.words.bulkAdd(fresh)
+  if (changed.length) await db.words.bulkPut(changed)
+  return { added: fresh.length, updated: changed.length }
+}
+
 interface V1Word {
   jp: string; reading?: string; meaning: string; category?: string
   polite?: string; example?: string; fav?: boolean; createdAt?: number

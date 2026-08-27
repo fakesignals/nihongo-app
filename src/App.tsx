@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { State } from './srs'
 import {
-  fingerprint, loadCloud, pullAndMerge, pushGist, readConnectId, saveCloud
+  fingerprint, loadCloud, pullAndSync, pushGist, readConnectId, saveCloud, syncMessage
 } from './cloud'
 import { clearIncomingCode, decodeShare, readIncomingCode } from './share'
 import { exportJSON, introducedToday, loadSettings, migrateFromV1, type WordInput } from './store'
@@ -68,10 +68,11 @@ export default function App() {
       // 화면을 자주 오갈 때 매번 요청하지 않도록 1분에 한 번으로 묶는다
       if (Date.now() - last < 60_000) return
       last = Date.now()
-      pullAndMerge(cfg.gistId)
-        .then(({ added }) => {
+      pullAndSync(cfg.gistId)
+        .then(({ added, updated }) => {
           saveCloud({ ...loadCloud()!, lastSync: Date.now() })
-          if (added) toast(`새 단어 ${added}개를 받았어요`)
+          const msg = syncMessage(added, updated)
+          if (msg) toast(msg)
         })
         .catch(() => {}) // 오프라인이면 다음에 열 때 다시 받는다
     }

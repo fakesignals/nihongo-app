@@ -3,7 +3,7 @@
  * 서버를 따로 두지 않으려고 Gist를 파일 보관함처럼 쓴다.
  * 토큰은 올리는 기기(PC)의 localStorage에만 있고, 링크·Gist 어디에도 담기지 않는다.
  */
-import { mergeWords, parseBackup } from './store'
+import { parseBackup, syncWords } from './store'
 
 const API = 'https://api.github.com/gists'
 const FILE = 'nihongo-pocket.json'
@@ -114,7 +114,15 @@ export function extractGistId(text: string): string | null {
   return /^[0-9a-f]{6,}$/i.test(t) ? t : null
 }
 
-/** 보관함에서 받아 내 단어장에 합치기 (이미 있는 단어는 건너뜀) */
-export async function pullAndMerge(gistId: string) {
-  return mergeWords(parseBackup(await pullGist(gistId)))
+/** 보관함을 받아 내 단어장에 반영. 새 단어는 추가하고, 바뀐 내용은 덮어쓴다 */
+export async function pullAndSync(gistId: string) {
+  return syncWords(parseBackup(await pullGist(gistId)))
+}
+
+/** 받은 결과를 알릴 문구. 아무것도 안 바뀌었으면 빈 문자열 */
+export function syncMessage(added: number, updated: number): string {
+  const parts: string[] = []
+  if (added) parts.push(`새 단어 ${added}개`)
+  if (updated) parts.push(`수정 ${updated}개`)
+  return parts.length ? parts.join(' · ') + '를 받았어요' : ''
 }

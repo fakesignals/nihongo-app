@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../db'
 import { seedWords } from '../seed'
 import {
-  connectLinkFor, createGist, extractGistId, fingerprint, loadCloud, pullAndMerge,
-  pushGist, saveCloud, type CloudConfig
+  connectLinkFor, createGist, extractGistId, fingerprint, loadCloud, pullAndSync,
+  pushGist, saveCloud, syncMessage, type CloudConfig
 } from '../cloud'
 import { decodeShare, encodeShare, extractCode, LINK_LIMIT, shareLinkFor } from '../share'
 import { exportJSON, loadSettings, makeWord, mergeWords, parseBackup, saveSettings } from '../store'
@@ -219,11 +219,12 @@ export default function SettingsSheet({
     if (!id) { alert('연결 링크를 붙여넣어 주세요.'); return }
     setBusy(true)
     try {
-      const { added } = await pullAndMerge(id)
+      const { added, updated } = await pullAndSync(id)
       saveCloud({ gistId: id, lastSync: Date.now() })
       setCloud(loadCloud())
       setPastedGist('')
-      toast(added ? `연결했어요. 단어 ${added}개를 받았어요` : '연결했어요')
+      const msg = syncMessage(added, updated)
+      toast(msg ? `연결했어요. ${msg}` : '연결했어요')
     } catch (e) {
       alert((e as Error).message)
     } finally {
@@ -241,9 +242,9 @@ export default function SettingsSheet({
         saveCloud({ ...cloud, pushedHash: fingerprint(content), lastSync: Date.now() })
         toast(`단어 ${words.length}개를 올렸어요`)
       } else {
-        const { added } = await pullAndMerge(cloud.gistId)
+        const { added, updated } = await pullAndSync(cloud.gistId)
         saveCloud({ ...cloud, lastSync: Date.now() })
-        toast(added ? `새 단어 ${added}개를 받았어요` : '새로 온 단어는 없어요')
+        toast(syncMessage(added, updated) || '이미 PC와 같아요')
       }
       setCloud(loadCloud())
     } catch (e) {
