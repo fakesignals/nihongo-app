@@ -102,8 +102,7 @@ export default function SettingsSheet({
             {[5, 10, 20, 50].map(n => (
               <button
                 key={n}
-                className="soft-btn"
-                style={newPerDay === n ? { background: 'var(--ink)', color: '#fff', borderColor: 'var(--ink)' } : undefined}
+                className={`soft-btn ${newPerDay === n ? 'active' : ''}`}
                 onClick={() => changeNewPerDay(n)}
               >
                 {n}개
@@ -121,8 +120,7 @@ export default function SettingsSheet({
           </p>
           <div className="settings-row">
             <button
-              className="soft-btn"
-              style={autoSpeak ? { background: 'var(--ink)', color: '#fff', borderColor: 'var(--ink)' } : undefined}
+              className={`soft-btn ${autoSpeak ? 'active' : ''}`}
               onClick={() => changeAutoSpeak(!autoSpeak)}
             >
               {autoSpeak ? '정답 공개 시 자동 재생 ON' : '자동 재생 OFF'}
@@ -132,8 +130,7 @@ export default function SettingsSheet({
             {([[0.7, '느리게'], [0.9, '보통'], [1.1, '빠르게']] as const).map(([r, label]) => (
               <button
                 key={label}
-                className="soft-btn"
-                style={speakRate === r ? { background: 'var(--ink)', color: '#fff', borderColor: 'var(--ink)' } : undefined}
+                className={`soft-btn ${speakRate === r ? 'active' : ''}`}
                 onClick={() => changeSpeakRate(r)}
               >
                 {label}

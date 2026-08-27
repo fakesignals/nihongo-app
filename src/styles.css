@@ -237,6 +237,7 @@ rt{font-size:44%;font-weight:650;color:var(--accent);font-family:-apple-system,B
 .settings-section p{font-size:12px;line-height:1.6;color:var(--muted);margin:0 0 12px}
 .settings-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .soft-btn{border:1px solid var(--line);background:var(--surface);border-radius:13px;padding:10px 13px;font-size:12px;font-weight:800;color:var(--text-2)}
+.soft-btn.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .ios-note{background:var(--accent-soft);border-radius:16px;padding:13px 15px;font-size:12px;line-height:1.7;color:var(--accent-soft-fg)}
 
 /* ---- toast ---- */
