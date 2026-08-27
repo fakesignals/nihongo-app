@@ -105,27 +105,32 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
           const masked = hideMeaning && !revealed.has(w.id)
           return (
             <article key={w.id} className="word-card" onClick={() => onEdit(w)}>
-              <div className="wc-top">
+              <div className="wc-main">
                 <div className="wc-jp">
                   <div className="word-jp"><Furigana jp={w.jp} reading={w.reading} /></div>
                   <Speaker text={speakText(w)} />
                 </div>
-                {masked ? (
-                  <button
-                    className="meaning-mask"
-                    aria-label="뜻 보기"
-                    onClick={e => { e.stopPropagation(); toggleReveal(w.id) }}
-                  >
-                    <i /><i /><i />
-                  </button>
-                ) : (
-                  <div
-                    className={`meaning ${hideMeaning ? 'revealed' : ''}`}
-                    onClick={hideMeaning ? e => { e.stopPropagation(); toggleReveal(w.id) } : undefined}
-                  >
-                    {w.meaning}{w.polite ? <> · <b>{w.polite}</b></> : null}
-                  </div>
-                )}
+                <div className="wc-detail">
+                  {masked ? (
+                    <button
+                      className="meaning-mask"
+                      aria-label="뜻 보기"
+                      onClick={e => { e.stopPropagation(); toggleReveal(w.id) }}
+                    >
+                      <i /><i /><i />
+                    </button>
+                  ) : (
+                    <div
+                      className={`meaning ${hideMeaning ? 'revealed' : ''}`}
+                      onClick={hideMeaning ? e => { e.stopPropagation(); toggleReveal(w.id) } : undefined}
+                    >
+                      {w.meaning}{w.polite ? <> · <b>{w.polite}</b></> : null}
+                    </div>
+                  )}
+                  <span className={`tag ${w.state === State.New ? 'new-tag' : w.due <= Date.now() ? 'due-tag' : ''}`}>
+                    {dueLabel(w)}
+                  </span>
+                </div>
                 <button
                   className={`fav ${w.fav ? 'active' : ''}`}
                   aria-label="즐겨찾기"
@@ -133,12 +138,6 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
                 >
                   <svg viewBox="0 0 24 24" fill={w.fav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8"><path d="m12 3 2.78 5.63 6.22.9-4.5 4.39 1.06 6.2L12 17.2l-5.56 2.92 1.06-6.2L3 9.53l6.22-.9L12 3Z"/></svg>
                 </button>
-              </div>
-              {/* 카테고리는 위 칩으로 거르니 카드에서는 빼고 복습 일정만 남긴다 */}
-              <div className="meta">
-                <span className={`tag meta-right ${w.state === State.New ? 'new-tag' : w.due <= Date.now() ? 'due-tag' : ''}`}>
-                  {dueLabel(w)}
-                </span>
               </div>
             </article>
           )
