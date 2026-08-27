@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { State } from './srs'
+import {
+  fingerprint, loadCloud, pullAndMerge, pushGist, readConnectId, saveCloud
+} from './cloud'
 import { clearIncomingCode, decodeShare, readIncomingCode } from './share'
-import { introducedToday, loadSettings, migrateFromV1, type WordInput } from './store'
+import { exportJSON, introducedToday, loadSettings, migrateFromV1, type WordInput } from './store'
 import type { Word } from './types'
 import Library from './views/Library'
 import Review from './views/Review'
@@ -24,7 +27,9 @@ export default function App() {
   const [toastMsg, setToastMsg] = useState('')
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  const words = useLiveQuery(() => db.words.toArray(), []) ?? []
+  // undefined = 아직 IndexedDB에서 읽는 중. 빈 목록을 올려버리지 않으려고 구분해 둔다
+  const wordsRaw = useLiveQuery(() => db.words.toArray(), [])
+  const words = wordsRaw ?? []
 
   const toast = (msg: string) => {
     setToastMsg(msg)
@@ -41,6 +46,55 @@ export default function App() {
       }
     })()
   }, [])
+
+  // 보관함 연결 링크(#g=...)로 열렸으면 이 기기를 '받는 쪽'으로 등록한다
+  useEffect(() => {
+    const id = readConnectId()
+    if (!id) return
+    const cfg = loadCloud()
+    if (cfg?.gistId !== id) {
+      saveCloud({ ...cfg, gistId: id })
+      toast('PC 단어장에 연결했어요')
+    }
+    clearIncomingCode()
+  }, [])
+
+  // 받는 쪽이면 앱을 열 때, 그리고 다시 앱으로 돌아올 때 새 단어를 받아온다
+  useEffect(() => {
+    let last = 0
+    const pull = () => {
+      const cfg = loadCloud()
+      if (!cfg?.gistId || cfg.token) return
+      // 화면을 자주 오갈 때 매번 요청하지 않도록 1분에 한 번으로 묶는다
+      if (Date.now() - last < 60_000) return
+      last = Date.now()
+      pullAndMerge(cfg.gistId)
+        .then(({ added }) => {
+          saveCloud({ ...loadCloud()!, lastSync: Date.now() })
+          if (added) toast(`새 단어 ${added}개를 받았어요`)
+        })
+        .catch(() => {}) // 오프라인이면 다음에 열 때 다시 받는다
+    }
+    const onVisible = () => { if (document.visibilityState === 'visible') pull() }
+    pull()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
+  // 올리는 쪽(PC)이면 단어가 바뀔 때마다 보관함을 갱신한다
+  useEffect(() => {
+    const cfg = loadCloud()
+    if (!cfg?.token || !wordsRaw?.length) return
+    const content = exportJSON(wordsRaw, false)
+    const hash = fingerprint(content)
+    if (hash === cfg.pushedHash) return
+    const timer = setTimeout(() => {
+      pushGist(cfg.gistId, cfg.token!, content)
+        .then(() => saveCloud({ ...loadCloud()!, pushedHash: hash, lastSync: Date.now() }))
+        .catch(() => {}) // 실패하면 다음 변경 때 다시 시도
+    }, 4000)
+    return () => clearTimeout(timer)
+  }, [wordsRaw])
 
   // 공유 링크(#w=...)로 열렸으면 받은 단어를 확인 시트로 띄운다
   useEffect(() => {

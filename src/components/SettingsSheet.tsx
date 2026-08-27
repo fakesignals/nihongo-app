@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../db'
 import { seedWords } from '../seed'
+import {
+  connectLinkFor, createGist, extractGistId, fingerprint, loadCloud, pullAndMerge,
+  pushGist, saveCloud, type CloudConfig
+} from '../cloud'
 import { decodeShare, encodeShare, extractCode, LINK_LIMIT, shareLinkFor } from '../share'
 import { exportJSON, loadSettings, makeWord, mergeWords, parseBackup, saveSettings } from '../store'
 import type { Word } from '../types'
@@ -21,6 +25,10 @@ export default function SettingsSheet({
   const [voiceOk, setVoiceOk] = useState(() => hasJaVoice())
   const [scope, setScope] = useState('all')
   const [pasted, setPasted] = useState('')
+  const [cloud, setCloud] = useState<CloudConfig | null>(() => loadCloud())
+  const [token, setToken] = useState('')
+  const [pastedGist, setPastedGist] = useState('')
+  const [busy, setBusy] = useState(false)
 
   const categories = useMemo(
     () => [...new Set(words.map(w => w.category))].sort((a, b) => a.localeCompare(b, 'ko')),
@@ -166,6 +174,86 @@ export default function SettingsSheet({
     saveSettings({ ...loadSettings(), newPerDay: n })
   }
 
+  // ---- PC → 폰 자동 전송 ----
+  const startSending = async () => {
+    const t = token.trim()
+    if (!t) { alert('GitHub 토큰을 붙여넣어 주세요.'); return }
+    setBusy(true)
+    try {
+      const gistId = await createGist(t, exportJSON(words, false))
+      saveCloud({ gistId, token: t, pushedHash: fingerprint(exportJSON(words, false)), lastSync: Date.now() })
+      setCloud(loadCloud())
+      setToken('')
+      toast('보관함을 만들었어요. 연결 링크를 폰으로 보내세요')
+    } catch (e) {
+      alert((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const copyConnectLink = async () => {
+    if (!cloud) return
+    const url = connectLinkFor(cloud.gistId)
+    try {
+      if (navigator.share) { await navigator.share({ title: 'Nihongo Pocket 연결', url }); return }
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') return
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      toast('연결 링크를 복사했어요')
+    } catch {
+      alert(url)
+    }
+  }
+
+  const connectReceiver = async () => {
+    const id = extractGistId(pastedGist)
+    if (!id) { alert('연결 링크를 붙여넣어 주세요.'); return }
+    setBusy(true)
+    try {
+      const { added } = await pullAndMerge(id)
+      saveCloud({ gistId: id, lastSync: Date.now() })
+      setCloud(loadCloud())
+      setPastedGist('')
+      toast(added ? `연결했어요. 단어 ${added}개를 받았어요` : '연결했어요')
+    } catch (e) {
+      alert((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const syncNow = async () => {
+    if (!cloud) return
+    setBusy(true)
+    try {
+      if (cloud.token) {
+        const content = exportJSON(words, false)
+        await pushGist(cloud.gistId, cloud.token, content)
+        saveCloud({ ...cloud, pushedHash: fingerprint(content), lastSync: Date.now() })
+        toast(`단어 ${words.length}개를 올렸어요`)
+      } else {
+        const { added } = await pullAndMerge(cloud.gistId)
+        saveCloud({ ...cloud, lastSync: Date.now() })
+        toast(added ? `새 단어 ${added}개를 받았어요` : '새로 온 단어는 없어요')
+      }
+      setCloud(loadCloud())
+    } catch (e) {
+      alert((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const disconnect = () => {
+    if (!confirm('연결을 끊을까요? 이미 받은 단어는 그대로 남습니다.')) return
+    saveCloud(null)
+    setCloud(null)
+    toast('연결을 끊었어요')
+  }
+
   return (
     <div className="sheet-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="sheet" role="dialog" aria-modal="true">
@@ -220,6 +308,70 @@ export default function SettingsSheet({
           <button className="soft-btn" onClick={() => speak('こんにちは。にほんごのはつおんテストです。')}>
             테스트 재생
           </button>
+        </div>
+
+        <div className="settings-section">
+          <h4>PC → 폰 자동 전송</h4>
+          {!cloud ? (
+            <>
+              <p>
+                PC에서 단어를 넣으면 자동으로 보관함에 올라가고, 폰은 앱을 열 때 받아옵니다.
+                <b>PC에서 먼저</b> 보관함을 만든 뒤, 나온 연결 링크를 폰에서 열면 끝이에요.
+              </p>
+              <div className="field" style={{ marginBottom: 10 }}>
+                <label>① 이 기기(PC)를 보내는 쪽으로</label>
+                <input
+                  type="password"
+                  value={token}
+                  onChange={e => setToken(e.target.value)}
+                  placeholder="GitHub 토큰 붙여넣기"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+              <button className="soft-btn" disabled={busy} onClick={startSending}>보관함 만들기</button>
+              <p style={{ margin: '9px 0 14px' }}>
+                토큰은 <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">
+                GitHub 토큰 만들기</a>에서 <b>Account permissions → Gists → Read and write</b>만 켜서 만드세요.
+                저장소 권한은 주지 마세요. 토큰은 이 브라우저에만 저장되고 링크나 보관함에는 들어가지 않습니다.
+              </p>
+              <div className="field" style={{ marginBottom: 10 }}>
+                <label>② 이 기기(폰)를 받는 쪽으로</label>
+                <input
+                  value={pastedGist}
+                  onChange={e => setPastedGist(e.target.value)}
+                  placeholder="PC에서 받은 연결 링크"
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                />
+              </div>
+              <button className="soft-btn" disabled={busy} onClick={connectReceiver}>연결하기</button>
+            </>
+          ) : (
+            <>
+              <p>
+                {cloud.token
+                  ? '이 기기가 보내는 쪽이에요. 단어를 바꾸면 몇 초 뒤 자동으로 올라갑니다.'
+                  : '이 기기는 받는 쪽이에요. 앱을 열 때마다 새 단어를 받아옵니다.'}
+                {cloud.lastSync
+                  ? ` 마지막 ${cloud.token ? '전송' : '수신'}: ${new Date(cloud.lastSync).toLocaleString('ko-KR')}`
+                  : ''}
+              </p>
+              <div className="settings-row">
+                {cloud.token && (
+                  <button className="soft-btn" onClick={copyConnectLink}>연결 링크 보내기</button>
+                )}
+                <button className="soft-btn" disabled={busy} onClick={syncNow}>
+                  {cloud.token ? '지금 올리기' : '지금 받기'}
+                </button>
+                <button className="soft-btn" onClick={disconnect}>연결 끊기</button>
+              </div>
+              <p style={{ margin: '11px 0 0' }}>
+                받는 쪽에서 지운 단어는 다시 열 때 또 받아옵니다. PC에서 지운 것도 폰에서 자동으로 지워지지는 않아요.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="settings-section">

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { db } from '../db'
+import { parseWordLines } from '../parse'
 import { makeWord, type WordInput } from '../store'
 import type { Word } from '../types'
 import Furigana from '../components/Furigana'
@@ -7,36 +8,6 @@ import Furigana from '../components/Furigana'
 interface ParsedRow extends WordInput {
   duplicate: boolean
   incomplete: boolean
-}
-
-/** 한 줄을 [일본어, 읽기?, 뜻, 예문?]으로 파싱. 탭 > | > 쉼표 > ' - ' 순으로 구분자 추정 */
-function parseLine(line: string): WordInput | null {
-  const l = line.trim()
-  if (!l) return null
-  let parts: string[]
-  if (l.includes('\t')) parts = l.split('\t')
-  else if (l.includes('|')) parts = l.split('|')
-  else if (/[,，]/.test(l)) parts = l.split(/[,，]/)
-  else if (l.includes(' - ')) parts = l.split(' - ')
-  else if (l.includes('=')) parts = l.split('=')
-  else parts = l.split(/\s+/)
-  parts = parts.map(p => p.trim()).filter(Boolean)
-
-  let jp = parts[0] ?? ''
-  let reading = ''
-  // 食べる(たべる) 형태에서 읽기 추출
-  const m = jp.match(/^(.+?)[（(]([^)）]+)[)）]$/)
-  if (m) { jp = m[1].trim(); reading = m[2].trim() }
-
-  if (parts.length <= 1) return { jp, reading, meaning: '' }
-  if (parts.length === 2) return { jp, reading, meaning: parts[1] }
-  // 3개 이상: 2번째 칸이 히라가나/가타카나면 읽기로 간주
-  const second = parts[1]
-  const isKana = /^[぀-ヿー・\s]+$/.test(second)
-  if (isKana && !reading) {
-    return { jp, reading: second, meaning: parts[2], example: parts.slice(3).join('\n') }
-  }
-  return { jp, reading, meaning: second, example: parts.slice(2).join('\n') }
 }
 
 export default function BulkImport({ words, toast }: { words: Word[]; toast: (m: string) => void }) {
@@ -49,20 +20,24 @@ export default function BulkImport({ words, toast }: { words: Word[]; toast: (m:
     [words]
   )
 
+  const fallbackCat = category.trim() || '듀오링고'
+
   const rows: ParsedRow[] = useMemo(() => {
     const seen = new Set<string>()
-    return text.split('\n').map(parseLine).filter((r): r is WordInput => r !== null).map(r => {
+    return parseWordLines(text, fallbackCat).map(r => {
       const duplicate = existing.has(r.jp) || seen.has(r.jp)
       seen.add(r.jp)
       return { ...r, duplicate, incomplete: !r.meaning }
     })
-  }, [text, existing])
+  }, [text, existing, fallbackCat])
 
   const importable = rows.filter(r => !r.duplicate && !r.incomplete)
+  // 카테고리를 줄에서 정한 게 있으면 미리보기에 보여준다
+  const showCat = useMemo(() => new Set(rows.map(r => r.category)).size > 1, [rows])
 
   const doImport = async () => {
     if (!importable.length) return
-    const newWords = importable.map(r => makeWord({ ...r, category: category || '듀오링고' }))
+    const newWords = importable.map(r => makeWord(r))
     await db.words.bulkAdd(newWords)
     toast(`${newWords.length}개 단어를 추가했어요`)
     setText('')
@@ -71,11 +46,34 @@ export default function BulkImport({ words, toast }: { words: Word[]; toast: (m:
   return (
     <section className="view">
       <div className="import-box">
-        <h3>듀오링고 단어 한 번에 넣기</h3>
+        <h3>단어 한 번에 넣기</h3>
         <p className="hint">
-          한 줄에 한 단어씩 붙여넣으세요. 구분은 탭·쉼표·공백 모두 인식해요.<br />
+          한 줄에 한 단어씩 붙여넣으세요. 구분은 탭·쉼표·<code>|</code>·공백 모두 인식해요.<br />
           <code>食べる たべる 먹다</code> / <code>食べる(たべる), 먹다</code> / <code>水 물</code>
         </p>
+        <details className="hint-more">
+          <summary>엑셀에서 옮기거나 칸을 정확히 지정하려면</summary>
+          <p className="hint">
+            <b>첫 줄에 칸 이름</b>을 쓰면 그 순서대로 읽습니다. 쓸 수 있는 이름은<br />
+            <code>일본어</code> <code>읽기</code> <code>뜻</code> <code>분류</code> <code>정중형</code> <code>예문</code>
+            (영어 <code>jp reading meaning category polite example</code>도 됩니다)
+          </p>
+          <pre className="hint-sample">{
+`일본어	읽기	뜻	정중형	예문
+食べる	たべる	먹다	食べます	ご飯を食べる。
+急ぐ	いそぐ	서두르다	急ぎます`
+          }</pre>
+          <p className="hint">
+            <b><code>#</code>으로 시작하는 줄</b>은 그 아래 단어들의 카테고리가 됩니다.
+            헤더에 <code>분류</code> 칸이 있으면 그게 이기고, 둘 다 없으면 아래 입력칸의 카테고리를 씁니다.
+          </p>
+          <pre className="hint-sample">{
+`# 동사
+食べる	たべる	먹다
+# 명사
+水	みず	물`
+          }</pre>
+        </details>
         <textarea
           className="import-textarea"
           placeholder={'食べる\tたべる\t먹다\n水\tみず\t물\n猫(ねこ) 고양이'}
@@ -105,6 +103,8 @@ export default function BulkImport({ words, toast }: { words: Word[]; toast: (m:
               <div key={i} className={`preview-item ${r.duplicate ? 'dup' : ''}`}>
                 <b><Furigana jp={r.jp} reading={r.reading || ''} /></b>
                 <span className="p-meaning">{r.meaning || '뜻 없음'}</span>
+                {r.polite && <span className="p-sub">{r.polite}</span>}
+                {showCat && <span className="p-cat">{r.category}</span>}
                 {r.duplicate && <span className="p-flag">중복</span>}
                 {!r.duplicate && r.incomplete && <span className="p-flag">뜻을 입력하세요</span>}
               </div>
