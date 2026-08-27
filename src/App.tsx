@@ -2,13 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { State } from './srs'
-import { introducedToday, loadSettings, migrateFromV1 } from './store'
+import { clearIncomingCode, decodeShare, readIncomingCode } from './share'
+import { introducedToday, loadSettings, migrateFromV1, type WordInput } from './store'
 import type { Word } from './types'
 import Library from './views/Library'
 import Review from './views/Review'
 import BulkImport from './views/BulkImport'
 import EditorSheet from './components/EditorSheet'
 import SettingsSheet from './components/SettingsSheet'
+import ShareInbox from './components/ShareInbox'
 
 type View = 'library' | 'import' | 'review'
 
@@ -17,6 +19,8 @@ export default function App() {
   // undefined = 닫힘, null = 새 단어, Word = 수정
   const [editing, setEditing] = useState<Word | null | undefined>(undefined)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // 공유 링크로 열렸을 때 받은 단어
+  const [incoming, setIncoming] = useState<WordInput[] | null>(null)
   const [toastMsg, setToastMsg] = useState('')
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
@@ -36,6 +40,16 @@ export default function App() {
         if (n) toast(`기존 앱 데이터 ${n}개를 가져왔어요`)
       }
     })()
+  }, [])
+
+  // 공유 링크(#w=...)로 열렸으면 받은 단어를 확인 시트로 띄운다
+  useEffect(() => {
+    const code = readIncomingCode()
+    if (!code) return
+    clearIncomingCode()
+    decodeShare(code)
+      .then(ws => (ws.length ? setIncoming(ws) : toast('링크에 담긴 단어가 없어요')))
+      .catch(() => toast('공유 링크를 읽지 못했어요'))
   }, [])
 
   const now = Date.now()
@@ -103,6 +117,9 @@ export default function App() {
       )}
       {settingsOpen && (
         <SettingsSheet words={words} onClose={() => setSettingsOpen(false)} toast={toast} />
+      )}
+      {incoming && (
+        <ShareInbox incoming={incoming} onClose={() => setIncoming(null)} toast={toast} />
       )}
 
       <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>

@@ -73,12 +73,30 @@ export function bumpIntroducedToday() {
 }
 
 // ---- 백업 / 복원 ----
-export function exportJSON(words: Word[]): string {
+/** withProgress=false면 학습 진도를 빼고 단어 내용만 담는다 (공유용) */
+export function exportJSON(words: Word[], withProgress = true): string {
+  const list = withProgress
+    ? words
+    : words.map(({ jp, reading, meaning, category, polite, example }) =>
+        ({ jp, reading, meaning, category, polite, example }))
   return JSON.stringify(
-    { app: 'Nihongo Pocket', version: 2, exportedAt: new Date().toISOString(), words },
+    { app: 'Nihongo Pocket', version: 2, exportedAt: new Date().toISOString(), words: list },
     null,
     2
   )
+}
+
+/** 이미 있는 단어(같은 표기)는 건너뛰고 새 단어만 추가 */
+export async function mergeWords(incoming: Word[]): Promise<{ added: number; skipped: number }> {
+  const seen = new Set((await db.words.toArray()).map(w => w.jp))
+  const fresh: Word[] = []
+  for (const w of incoming) {
+    if (!w.jp || seen.has(w.jp)) continue
+    seen.add(w.jp)
+    fresh.push(w)
+  }
+  if (fresh.length) await db.words.bulkAdd(fresh)
+  return { added: fresh.length, skipped: incoming.length - fresh.length }
 }
 
 interface V1Word {
@@ -91,7 +109,10 @@ export function parseBackup(text: string): Word[] {
   const data = JSON.parse(text)
   if (!Array.isArray(data.words)) throw new Error('invalid backup')
   if (data.version === 2) {
-    return (data.words as Word[]).map(w => withCard(w, reviveCard(w.card)))
+    // 공유용 파일에는 card가 없어서, 그때는 새 카드로 시작한다
+    return (data.words as Word[]).map(w =>
+      w.card ? withCard(w, reviveCard(w.card)) : makeWord(w, { fav: w.fav ? 1 : 0, createdAt: w.createdAt })
+    )
   }
   return (data.words as V1Word[]).map(w =>
     makeWord(w, { fav: w.fav ? 1 : 0, createdAt: w.createdAt })

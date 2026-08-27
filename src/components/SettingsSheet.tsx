@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../db'
 import { seedWords } from '../seed'
-import { exportJSON, loadSettings, makeWord, parseBackup, saveSettings } from '../store'
+import { decodeShare, encodeShare, extractCode, LINK_LIMIT, shareLinkFor } from '../share'
+import { exportJSON, loadSettings, makeWord, mergeWords, parseBackup, saveSettings } from '../store'
 import type { Word } from '../types'
 import { hasJaVoice, speak, speechSupported } from '../speak'
 
@@ -18,6 +19,18 @@ export default function SettingsSheet({
   const [autoSpeak, setAutoSpeak] = useState(() => loadSettings().autoSpeak)
   const [speakRate, setSpeakRate] = useState(() => loadSettings().speakRate)
   const [voiceOk, setVoiceOk] = useState(() => hasJaVoice())
+  const [scope, setScope] = useState('all')
+  const [pasted, setPasted] = useState('')
+
+  const categories = useMemo(
+    () => [...new Set(words.map(w => w.category))].sort((a, b) => a.localeCompare(b, 'ko')),
+    [words]
+  )
+  const shared = useMemo(() => {
+    if (scope === 'all') return words
+    if (scope === 'fav') return words.filter(w => w.fav)
+    return words.filter(w => w.category === scope)
+  }, [words, scope])
 
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted).catch(() => setPersisted(null))
@@ -32,25 +45,92 @@ export default function SettingsSheet({
     return () => { speechSynthesis.removeEventListener('voiceschanged', check); clearTimeout(t) }
   }, [])
 
-  const doExport = () => {
-    const blob = new Blob([exportJSON(words)], { type: 'application/json' })
+  const today = () => new Date().toISOString().slice(0, 10)
+
+  const download = (json: string, name: string) => {
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'nihongo-pocket-backup-' + new Date().toISOString().slice(0, 10) + '.json'
+    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
+    a.download = name
     a.click()
     setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+  }
+
+  const doExport = () => {
+    download(exportJSON(words), `nihongo-pocket-backup-${today()}.json`)
     toast('백업 파일을 만들었어요')
+  }
+
+  const shareLink = async () => {
+    if (!shared.length) { toast('공유할 단어가 없어요'); return }
+    const url = shareLinkFor(await encodeShare(shared))
+    if (url.length > LINK_LIMIT) {
+      alert(
+        `단어 ${shared.length}개는 링크에 담기엔 많아요.\n` +
+        '공유할 범위를 좁히거나 [파일로 보내기]를 사용해 주세요.'
+      )
+      return
+    }
+    const text = `일본어 단어 ${shared.length}개를 보냈어요. 링크를 열면 단어장에 담을 수 있어요.`
+    try {
+      if (navigator.share) { await navigator.share({ title: '일본어 단어 공유', text, url }); return }
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') return
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      toast('링크를 복사했어요. 붙여넣어 보내세요')
+    } catch {
+      alert(url)
+    }
+  }
+
+  const shareFile = async () => {
+    if (!shared.length) { toast('공유할 단어가 없어요'); return }
+    // 받는 사람은 학습 진도를 처음부터 시작해야 하므로 진도는 빼고 보냄
+    const json = exportJSON(shared, false)
+    const name = `일본어단어-${shared.length}개-${today()}.json`
+    const file = new File([json], name, { type: 'application/json' })
+    if (navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: '일본어 단어 공유' }); return }
+      catch (e) { if ((e as Error).name === 'AbortError') return }
+    }
+    download(json, name)
+    toast('파일을 만들었어요. 카톡 등으로 보내주세요')
+  }
+
+  const receiveLink = async () => {
+    const code = extractCode(pasted)
+    if (!code) { alert('공유 링크를 붙여넣어 주세요.'); return }
+    let incoming
+    try {
+      incoming = await decodeShare(code)
+    } catch {
+      alert('링크를 읽지 못했어요. 전체가 복사됐는지 확인해 주세요.')
+      return
+    }
+    if (!incoming.length) { toast('링크에 담긴 단어가 없어요'); return }
+    if (!confirm(`단어 ${incoming.length}개를 단어장에 담을까요?`)) return
+    const { added, skipped } = await mergeWords(incoming.map(w => makeWord(w)))
+    setPasted('')
+    toast(
+      added
+        ? `단어 ${added}개를 담았어요${skipped ? ` (중복 ${skipped}개 건너뜀)` : ''}`
+        : '모두 이미 가지고 있는 단어예요'
+    )
+    if (added) onClose()
   }
 
   const doImport = async (file: File) => {
     try {
-      const imported = parseBackup(await file.text())
-      await db.words.clear()
-      await db.words.bulkAdd(imported)
-      toast(`백업에서 ${imported.length}개 단어를 복원했어요`)
-      onClose()
+      const { added, skipped } = await mergeWords(parseBackup(await file.text()))
+      toast(
+        added
+          ? `단어 ${added}개를 담았어요${skipped ? ` (중복 ${skipped}개 건너뜀)` : ''}`
+          : '모두 이미 가지고 있는 단어예요'
+      )
+      if (added) onClose()
     } catch {
-      alert('올바른 Nihongo Pocket 백업 파일이 아닙니다.')
+      alert('올바른 Nihongo Pocket 파일이 아닙니다.')
     }
   }
 
@@ -143,6 +223,52 @@ export default function SettingsSheet({
         </div>
 
         <div className="settings-section">
+          <h4>가족과 공유</h4>
+          <p>
+            고른 단어를 링크나 파일로 보내면, 받는 사람 단어장에 <b>합쳐집니다</b>.
+            이미 있는 단어는 건너뛰고 학습 진도는 서로 따로 쌓여요.
+          </p>
+          <div className="field" style={{ marginBottom: 10 }}>
+            <label>보낼 범위</label>
+            <select value={scope} onChange={e => setScope(e.target.value)}>
+              <option value="all">전체 단어 ({words.length}개)</option>
+              <option value="fav">즐겨찾기만 ({words.filter(w => w.fav).length}개)</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>
+                  {cat} ({words.filter(w => w.category === cat).length}개)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="settings-row">
+            <button className="soft-btn" onClick={shareLink}>링크로 보내기</button>
+            <button className="soft-btn" onClick={shareFile}>파일로 보내기</button>
+          </div>
+          <p style={{ margin: '11px 0 0' }}>
+            링크가 가장 간편해요. 단어가 아주 많으면 링크가 길어지니 그때는 파일로 보내세요.
+          </p>
+        </div>
+
+        <div className="settings-section">
+          <h4>공유받은 링크로 담기</h4>
+          <p>
+            받은 링크를 눌러도 되지만, 메신저 안에서 열리면 홈 화면 앱과 저장소가 달라질 수 있어요.
+            그럴 땐 링크를 복사해 여기에 붙여넣으면 <b>이 앱에 확실히</b> 담깁니다.
+          </p>
+          <div className="field" style={{ marginBottom: 10 }}>
+            <input
+              value={pasted}
+              onChange={e => setPasted(e.target.value)}
+              placeholder="받은 링크를 붙여넣으세요"
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+            />
+          </div>
+          <button className="soft-btn" onClick={receiveLink}>링크에서 단어 담기</button>
+        </div>
+
+        <div className="settings-section">
           <h4>백업 & 복원</h4>
           <p>
             단어장은 이 기기 브라우저(IndexedDB)에 저장됩니다.
@@ -150,7 +276,7 @@ export default function SettingsSheet({
           </p>
           <div className="settings-row">
             <button className="soft-btn" onClick={doExport}>백업 내보내기</button>
-            <button className="soft-btn" onClick={() => fileRef.current?.click()}>백업 가져오기</button>
+            <button className="soft-btn" onClick={() => fileRef.current?.click()}>파일 가져오기</button>
             <input
               ref={fileRef}
               type="file"
