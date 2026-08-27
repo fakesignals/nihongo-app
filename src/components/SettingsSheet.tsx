@@ -7,7 +7,7 @@ import {
 } from '../cloud'
 import { decodeShare, encodeShare, extractCode, LINK_LIMIT, shareLinkFor } from '../share'
 import { exportJSON, loadSettings, makeWord, mergeWords, parseBackup, saveSettings } from '../store'
-import type { Word } from '../types'
+import type { Settings, Word } from '../types'
 import { hasJaVoice, speak, speechSupported } from '../speak'
 
 export default function SettingsSheet({
@@ -29,6 +29,7 @@ export default function SettingsSheet({
   const [token, setToken] = useState('')
   const [pastedGist, setPastedGist] = useState('')
   const [busy, setBusy] = useState(false)
+  const [jpFont, setJpFont] = useState<Settings['jpFont']>(() => loadSettings().jpFont)
 
   const categories = useMemo(
     () => [...new Set(words.map(w => w.category))].sort((a, b) => a.localeCompare(b, 'ko')),
@@ -174,6 +175,11 @@ export default function SettingsSheet({
     saveSettings({ ...loadSettings(), newPerDay: n })
   }
 
+  const changeJpFont = (f: Settings['jpFont']) => {
+    setJpFont(f)
+    saveSettings({ ...loadSettings(), jpFont: f }) // saveSettings가 문서에 바로 반영한다
+  }
+
   // ---- PC → 폰 자동 전송 ----
   const startSending = async () => {
     const t = token.trim()
@@ -274,6 +280,23 @@ export default function SettingsSheet({
                 onClick={() => changeNewPerDay(n)}
               >
                 {n}개
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <h4>단어 글꼴</h4>
+          <p>일본어 단어를 어떤 글씨체로 보여줄지 고릅니다. 한국어 부분은 그대로예요.</p>
+          <div className="settings-row">
+            {([['serif', '명조체', '食べる'], ['sans', '고딕체', '食べる']] as const).map(([f, label, sample]) => (
+              <button
+                key={f}
+                className={`soft-btn font-pick ${jpFont === f ? 'active' : ''}`}
+                onClick={() => changeJpFont(f)}
+              >
+                <span style={{ fontFamily: f === 'serif' ? 'var(--jp-serif)' : 'var(--jp-sans)' }}>{sample}</span>
+                {label}
               </button>
             ))}
           </div>

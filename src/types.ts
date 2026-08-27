@@ -28,4 +28,6 @@ export interface Settings {
   autoSpeak: boolean
   /** 음성 재생 속도 (0.6~1.2) */
   speakRate: number
+  /** 일본어 단어 글꼴 */
+  jpFont: 'serif' | 'sans'
 }

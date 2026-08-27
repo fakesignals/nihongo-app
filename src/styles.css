@@ -32,6 +32,9 @@
   --shadow-md:0 2px 4px rgba(23,26,33,.05),0 16px 44px rgba(23,26,33,.09);
   --shadow-nav:0 4px 10px rgba(23,26,33,.06),0 16px 40px rgba(23,26,33,.14);
   --jp-serif:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
+  --jp-sans:"Hiragino Sans","Yu Gothic","Noto Sans JP","Apple SD Gothic Neo",sans-serif;
+  /* 일본어 표시 글꼴. 설정에서 data-jpfont="sans"를 걸면 고딕으로 바뀐다 */
+  --jp-font:var(--jp-serif);
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bottom:env(safe-area-inset-bottom,0px);
 }
@@ -71,6 +74,7 @@
     --shadow-nav:0 4px 10px rgba(0,0,0,.3),0 16px 40px rgba(0,0,0,.45);
   }
 }
+:root[data-jpfont="sans"]{--jp-font:var(--jp-sans)}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -90,7 +94,7 @@ h1{font-size:29px;line-height:1.08;letter-spacing:-.045em;margin:0;font-weight:8
 /* ---- hero ---- */
 .hero{margin-top:14px;background:linear-gradient(128deg,var(--hero-a) 0%,var(--hero-b) 55%,var(--hero-c) 130%);border-radius:26px;padding:24px 22px;color:#fff;box-shadow:0 20px 48px -12px color-mix(in srgb,var(--hero-b) 45%,transparent);position:relative;overflow:hidden}
 .hero:before{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 88% -10%,rgba(255,255,255,.16),transparent 55%)}
-.hero:after{content:"復習";position:absolute;right:2px;top:-14px;font-size:104px;line-height:1;font-weight:600;color:rgba(255,255,255,.07);font-family:var(--jp-serif);letter-spacing:-.06em;writing-mode:vertical-rl}
+.hero:after{content:"復習";position:absolute;right:2px;top:-14px;font-size:104px;line-height:1;font-weight:600;color:rgba(255,255,255,.07);font-family:var(--jp-font);letter-spacing:-.06em;writing-mode:vertical-rl}
 .hero-title{font-size:13px;opacity:.75;font-weight:700;letter-spacing:.06em;position:relative;z-index:1}
 .hero-main{font-size:25px;font-weight:850;letter-spacing:-.03em;margin-top:7px;position:relative;z-index:1;line-height:1.25}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:20px;position:relative;z-index:1}
@@ -123,7 +127,7 @@ h1{font-size:29px;line-height:1.08;letter-spacing:-.045em;margin:0;font-weight:8
 .word-card{background:var(--surface);border:1px solid var(--line);border-radius:19px;padding:12px 16px 13px;box-shadow:var(--shadow-sm);transition:.16s transform}
 .word-card:active{transform:scale(.99)}
 .wc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.word-jp{font-size:23px;font-weight:800;letter-spacing:-.02em;font-family:var(--jp-serif);line-height:1.15;padding-top:10px}
+.word-jp{font-size:23px;font-weight:800;letter-spacing:-.02em;font-family:var(--jp-font);line-height:1.15;padding-top:10px}
 ruby{ruby-align:center}
 rt{font-size:53%;font-weight:650;color:var(--accent);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Apple SD Gothic Neo",sans-serif;letter-spacing:.02em;padding-bottom:2px}
 /* 뜻: 단어 오른쪽(카드 가운데)에 배치. 가리기 모드에선 점 3개 알약으로 대체 */
@@ -173,13 +177,13 @@ rt{font-size:53%;font-weight:650;color:var(--accent);font-family:-apple-system,B
 .flashcard:before{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,var(--accent-soft),transparent 70%);top:-110px;right:-85px}
 .progress{font-size:11px;color:var(--faint);font-weight:750;position:relative;z-index:1;display:flex;justify-content:space-between;letter-spacing:.08em}
 .question-label{font-size:12px;color:var(--muted);font-weight:750;margin-bottom:12px}
-.question{font-size:46px;font-weight:700;letter-spacing:-.02em;line-height:1.2;word-break:keep-all;font-family:var(--jp-serif)}
+.question{font-size:46px;font-weight:700;letter-spacing:-.02em;line-height:1.2;word-break:keep-all;font-family:var(--jp-font)}
 .question.small{font-size:32px}
 .answer{margin-top:20px;padding-top:20px;border-top:1px solid var(--line);animation:rise .22s ease}
 @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .answer-reading{color:var(--accent);font-size:14px;font-weight:750;margin-bottom:7px}
 .answer-main{font-size:22px;font-weight:800;letter-spacing:-.01em}
-.answer-main.jp{font-family:var(--jp-serif);font-size:27px;font-weight:700;padding-top:12px;line-height:1.2}
+.answer-main.jp{font-family:var(--jp-font);font-size:27px;font-weight:700;padding-top:12px;line-height:1.2}
 .answer-polite{font-size:15px;color:var(--text-2);font-weight:650}
 .example{font-size:13px;color:var(--muted);margin-top:13px;line-height:1.7;white-space:pre-line}
 .reveal{border:0;background:var(--ink);color:var(--bg);border-radius:16px;padding:15px 20px;font-weight:800;width:100%;position:relative;z-index:1}
@@ -212,7 +216,7 @@ rt{font-size:53%;font-weight:650;color:var(--accent);font-family:-apple-system,B
 .import-row{display:flex;gap:9px;margin-top:10px;align-items:center}
 .preview-list{display:grid;gap:7px;margin-top:14px}
 .preview-item{display:flex;gap:10px;align-items:baseline;background:var(--input-bg);border:1px solid var(--line);border-radius:13px;padding:11px 13px;font-size:13px;flex-wrap:wrap}
-.preview-item b{font-size:15px;font-family:var(--jp-serif);font-weight:700;padding-top:5px}
+.preview-item b{font-size:15px;font-family:var(--jp-font);font-weight:700;padding-top:5px}
 .preview-item .p-meaning{color:var(--text-2)}
 .preview-item.dup{opacity:.4;text-decoration:line-through}
 .preview-item .p-sub{font-size:11px;color:var(--faint);font-weight:750}
@@ -243,6 +247,8 @@ rt{font-size:53%;font-weight:650;color:var(--accent);font-family:-apple-system,B
 .settings-section p{font-size:12px;line-height:1.6;color:var(--muted);margin:0 0 12px}
 .settings-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .soft-btn{border:1px solid var(--line);background:var(--surface);border-radius:13px;padding:10px 13px;font-size:12px;font-weight:800;color:var(--text-2)}
+.font-pick{display:inline-flex;align-items:center;gap:9px}
+.font-pick span{font-size:18px;font-weight:700}
 .soft-btn.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .sheet-note{font-size:12px;line-height:1.7;color:var(--muted);margin:0 0 12px}
 .warn-note{background:var(--warn-bg);color:var(--warn-fg);border-radius:16px;padding:13px 15px;font-size:12px;line-height:1.7;margin-bottom:12px}

@@ -40,7 +40,7 @@ export function withCard(word: Word, card: Card): Word {
 
 // ---- 설정 ----
 const SETTINGS_KEY = 'nihongo-pocket-settings'
-const defaultSettings: Settings = { newPerDay: 10, mode: 'jp-ko', hideMeaning: false, autoSpeak: true, speakRate: 0.9 }
+const defaultSettings: Settings = { newPerDay: 10, mode: 'jp-ko', hideMeaning: false, autoSpeak: true, speakRate: 0.9, jpFont: 'serif' }
 
 export function loadSettings(): Settings {
   try {
@@ -51,6 +51,12 @@ export function loadSettings(): Settings {
 }
 export function saveSettings(s: Settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s))
+  applyJpFont(s.jpFont)
+}
+
+/** 일본어 글꼴을 문서 전체에 반영 */
+export function applyJpFont(font: Settings['jpFont']) {
+  document.documentElement.dataset.jpfont = font
 }
 
 // ---- 오늘 새로 학습한 단어 수 (신규 카드 일일 제한용) ----
