@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../db'
 import { previewIntervals, rate, Rating, State, type Grade } from '../srs'
 import { bumpIntroducedToday, introducedToday, loadSettings, saveSettings } from '../store'
@@ -27,6 +27,7 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
   const [doneCount, setDoneCount] = useState(0)
   const [cramQueue, setCramQueue] = useState<string[] | null>(null)
   const [cramIdx, setCramIdx] = useState(0)
+  const swipeStart = useRef<{ x: number; y: number } | null>(null)
 
   const ready = words.length > 0
   const categories = useMemo(
@@ -105,6 +106,20 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
     if (current && loadSettings().autoSpeak) speak(speakText(current))
   }
 
+  const startSwipe = (e: React.PointerEvent) => {
+    if (revealed) swipeStart.current = { x: e.clientX, y: e.clientY }
+  }
+
+  const endSwipe = (e: React.PointerEvent) => {
+    const start = swipeStart.current
+    swipeStart.current = null
+    if (!revealed || !start) return
+    const dx = e.clientX - start.x
+    const dy = e.clientY - start.y
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.2) return
+    onRate(dx < 0 ? Rating.Again : Rating.Good)
+  }
+
   const front = current ? (mode === 'jp-ko' ? current.jp : current.meaning) : ''
 
   return (
@@ -145,18 +160,20 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
           )}
         </div>
       ) : (
-        <div className="flashcard">
+        <div className="flashcard review-card" onPointerDown={startSwipe} onPointerUp={endSwipe}>
           <div className="progress">
             <span>{scope === 'today' ? 'TODAY' : 'FREE'} · 남은 카드 {remaining}</span>
             <span>{current.state === State.New ? 'NEW' : ''}</span>
           </div>
-          <div>
+          <div className="review-stage">
+            <div className="review-prompt">
             <div className="question-label">
               {mode === 'jp-ko' ? '뜻을 떠올려 보세요' : '일본어를 떠올려 보세요'}
             </div>
             <div className={`question ${front.length > 7 ? 'small' : ''}`}>{front}</div>
             {mode === 'jp-ko' && <Speaker text={speakText(current)} className="speaker-lg" />}
-            {revealed && (
+            </div>
+            <div className={`answer-slot ${revealed ? 'visible' : ''}`} aria-hidden={!revealed}>
               <div className="answer">
                 {mode === 'jp-ko' ? (
                   <>
@@ -179,12 +196,14 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
                   </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
-          {!revealed ? (
-            <button className="reveal" onClick={doReveal}>정답 보기</button>
-          ) : (
-            <div className="ratings">
+          <div className="review-actions">
+            {!revealed ? (
+              <button className="reveal" onClick={doReveal}>정답 보기</button>
+            ) : (<>
+              <div className="swipe-hint"><b>← 다시</b><span>밀어서 넘기기</span><b>알맞음 →</b></div>
+              <div className="ratings">
               <button className="rate again" onClick={() => onRate(Rating.Again)}>
                 😵 다시<small>{intervals?.[Rating.Again]}</small>
               </button>
@@ -197,8 +216,9 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
               <button className="rate easy" onClick={() => onRate(Rating.Easy)}>
                 😎 쉬움<small>{intervals?.[Rating.Easy]}</small>
               </button>
-            </div>
-          )}
+              </div>
+            </>)}
+          </div>
         </div>
       )}
     </section>
