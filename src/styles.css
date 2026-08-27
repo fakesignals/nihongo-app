@@ -125,7 +125,7 @@ h1{font-size:29px;line-height:1.08;letter-spacing:-.045em;margin:0;font-weight:8
 .wc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .word-jp{font-size:23px;font-weight:800;letter-spacing:-.02em;font-family:var(--jp-serif);line-height:1.15;padding-top:10px}
 ruby{ruby-align:center}
-rt{font-size:44%;font-weight:650;color:var(--accent);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Apple SD Gothic Neo",sans-serif;letter-spacing:.02em;padding-bottom:2px}
+rt{font-size:53%;font-weight:650;color:var(--accent);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Apple SD Gothic Neo",sans-serif;letter-spacing:.02em;padding-bottom:2px}
 /* 뜻: 단어 오른쪽(카드 가운데)에 배치. 가리기 모드에선 점 3개 알약으로 대체 */
 .meaning{flex:1;min-width:0;font-size:16px;color:var(--text-2);font-weight:650;text-align:right;line-height:1.45;padding-top:13px;word-break:keep-all}
 .meaning.revealed{animation:rise .18s ease;cursor:pointer}

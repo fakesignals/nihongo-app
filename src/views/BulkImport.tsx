@@ -74,6 +74,18 @@ export default function BulkImport({ words, toast }: { words: Word[]; toast: (m:
 水	みず	물`
           }</pre>
         </details>
+        <div className="field" style={{ marginBottom: 12 }}>
+          <label>카테고리 — 아래에 넣는 단어가 모두 여기로 들어갑니다</label>
+          <input
+            list="importCategoryList"
+            placeholder="예: 명사, 동사 · 비우면 '듀오링고'"
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+          />
+          <datalist id="importCategoryList">
+            {categories.map(c => <option key={c} value={c} />)}
+          </datalist>
+        </div>
         <textarea
           className="import-textarea"
           placeholder={'食べる\tたべる\t먹다\n水\tみず\t물\n猫(ねこ) 고양이'}
@@ -81,19 +93,12 @@ export default function BulkImport({ words, toast }: { words: Word[]; toast: (m:
           onChange={e => setText(e.target.value)}
         />
         <div className="import-row">
-          <input
-            className="search"
-            style={{ padding: '12px 14px', flex: 1 }}
-            list="importCategoryList"
-            placeholder="카테고리 (비우면 '듀오링고')"
-            value={category}
-            onChange={e => setCategory(e.target.value)}
-          />
-          <datalist id="importCategoryList">
-            {categories.map(c => <option key={c} value={c} />)}
-          </datalist>
-          <button className="primary" style={{ flex: 'none' }} disabled={!importable.length} onClick={doImport}>
-            {importable.length ? `${importable.length}개 추가` : '추가'}
+          <button className="primary" style={{ flex: 1 }} disabled={!importable.length} onClick={doImport}>
+            {!importable.length
+              ? '추가'
+              : showCat
+                ? `${importable.length}개 추가`
+                : `${importable[0].category}에 ${importable.length}개 추가`}
           </button>
         </div>
 

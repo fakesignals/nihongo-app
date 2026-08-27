@@ -134,8 +134,8 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
                   <svg viewBox="0 0 24 24" fill={w.fav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8"><path d="m12 3 2.78 5.63 6.22.9-4.5 4.39 1.06 6.2L12 17.2l-5.56 2.92 1.06-6.2L3 9.53l6.22-.9L12 3Z"/></svg>
                 </button>
               </div>
+              {/* 카테고리는 위 칩으로 거르니 카드에서는 빼고 복습 일정만 남긴다 */}
               <div className="meta">
-                <span className="tag">{w.category || '기타'}</span>
                 <span className={`tag meta-right ${w.state === State.New ? 'new-tag' : w.due <= Date.now() ? 'due-tag' : ''}`}>
                   {dueLabel(w)}
                 </span>
