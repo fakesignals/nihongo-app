@@ -149,7 +149,7 @@ export default function Review({ words, toast }: { words: Word[]; toast: (m: str
               {scope === 'today'
                 ? doneCount
                   ? `카드 ${doneCount}장을 복습했어요. 내일 또 만나요.`
-                  : '지금은 복습할 카드가 없어요. [입력] 탭에서 단어를 추가해 보세요.'
+                  : '지금은 복습할 카드가 없어요. [수집] 탭에서 단어를 추가해 보세요.'
                 : '한 번 더 돌리거나 필터를 바꿔보세요.'}
             </p>
           </div>

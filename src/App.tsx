@@ -14,6 +14,8 @@ import BulkImport from './views/BulkImport'
 import EditorSheet from './components/EditorSheet'
 import SettingsSheet from './components/SettingsSheet'
 import ShareInbox from './components/ShareInbox'
+import QuickCaptureSheet from './components/QuickCaptureSheet'
+import DraftOrganizerSheet from './components/DraftOrganizerSheet'
 
 type View = 'library' | 'import' | 'review'
 
@@ -22,6 +24,8 @@ export default function App() {
   // undefined = 닫힘, null = 새 단어, Word = 수정
   const [editing, setEditing] = useState<Word | null | undefined>(undefined)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [quickOpen, setQuickOpen] = useState(false)
+  const [organizing, setOrganizing] = useState(false)
   // 공유 링크로 열렸을 때 받은 단어
   const [incoming, setIncoming] = useState<WordInput[] | null>(null)
   const [toastMsg, setToastMsg] = useState('')
@@ -108,12 +112,13 @@ export default function App() {
   }, [])
 
   const now = Date.now()
+  const studyWords = useMemo(() => words.filter(w => w.meaning.trim()), [words])
   const dueCount = useMemo(
-    () => words.filter(w => w.state !== State.New && w.due <= now).length,
-    [words, now]
+    () => studyWords.filter(w => w.state !== State.New && w.due <= now).length,
+    [studyWords, now]
   )
   const newRemaining = Math.max(0, loadSettings().newPerDay - introducedToday())
-  const newAvailable = Math.min(newRemaining, words.filter(w => w.state === State.New).length)
+  const newAvailable = Math.min(newRemaining, studyWords.filter(w => w.state === State.New).length)
   const todayTotal = dueCount + newAvailable
   const learned = words.filter(w => w.state === State.Review).length
 
@@ -143,9 +148,11 @@ export default function App() {
           </div>
         </section>
 
-        {view === 'library' && <Library words={words} onEdit={w => setEditing(w)} />}
+        {view === 'library' && (
+          <Library words={words} onEdit={w => setEditing(w)} onOrganize={() => setOrganizing(true)} />
+        )}
         {view === 'import' && <BulkImport words={words} toast={toast} />}
-        {view === 'review' && <Review words={words} toast={toast} />}
+        {view === 'review' && <Review words={studyWords} toast={toast} />}
       </main>
 
       <nav className="bottom-nav">
@@ -153,7 +160,7 @@ export default function App() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16"/></svg>단어장
         </button>
         <button className={`nav-btn ${view === 'import' ? 'active' : ''}`} onClick={() => setView('import')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg>입력
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg>수집
         </button>
         <button className={`nav-btn ${view === 'review' ? 'active' : ''}`} onClick={() => setView('review')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6 9 17l-5-5"/><path d="M12 3a9 9 0 1 1-8.5 6"/></svg>복습
@@ -162,13 +169,23 @@ export default function App() {
       </nav>
 
       {view === 'library' && (
-        <button className="fab" aria-label="단어 추가" onClick={() => setEditing(null)}>
+        <button className="fab" aria-label="빠르게 단어 기록" onClick={() => setQuickOpen(true)}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
         </button>
       )}
 
       {editing !== undefined && (
         <EditorSheet word={editing} words={words} onClose={() => setEditing(undefined)} toast={toast} />
+      )}
+      {quickOpen && (
+        <QuickCaptureSheet
+          onClose={() => setQuickOpen(false)}
+          onDetailed={() => { setQuickOpen(false); setEditing(null) }}
+          toast={toast}
+        />
+      )}
+      {organizing && (
+        <DraftOrganizerSheet words={words} onClose={() => setOrganizing(false)} toast={toast} />
       )}
       {settingsOpen && (
         <SettingsSheet words={words} onClose={() => setSettingsOpen(false)} toast={toast} />

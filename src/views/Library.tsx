@@ -6,7 +6,13 @@ import Furigana from '../components/Furigana'
 import Speaker from '../components/Speaker'
 import { speakText } from '../speak'
 
-export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: Word) => void }) {
+export default function Library({
+  words, onEdit, onOrganize
+}: {
+  words: Word[]
+  onEdit: (w: Word) => void
+  onOrganize: () => void
+}) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('전체')
   const [onlyFav, setOnlyFav] = useState(false)
@@ -20,6 +26,7 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
     () => [...new Set(words.map(w => w.category || '기타'))].sort((a, b) => a.localeCompare(b, 'ko')),
     [words]
   )
+  const draftCount = useMemo(() => words.filter(w => !w.meaning.trim()).length, [words])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -69,6 +76,12 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
 
   return (
     <section className="view">
+      {draftCount > 0 && (
+        <button className="draft-banner" onClick={onOrganize}>
+          <span><b>미정리 단어 {draftCount}개</b><small>뜻을 채우면 복습을 시작해요</small></span>
+          <strong>정리하기 →</strong>
+        </button>
+      )}
       <div className="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
         <input
@@ -116,7 +129,7 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
         {filtered.length === 0 && (
           <div className="empty">
             조건에 맞는 단어가 없어요.<br />
-            + 버튼으로 추가하거나, [입력] 탭에서 듀오링고 단어를 한 번에 붙여넣어 보세요.
+            + 버튼으로 기록하거나, [수집] 탭에서 듀오링고 단어를 한 번에 붙여넣어 보세요.
           </div>
         )}
         {filtered.map(w => {
@@ -159,7 +172,8 @@ export default function Library({ words, onEdit }: { words: Word[]; onEdit: (w: 
                       className={`meaning ${hideMeaning ? 'revealed' : ''}`}
                       onClick={hideMeaning ? e => { e.stopPropagation(); toggleReveal(setRevealedMeanings, w.id) } : undefined}
                     >
-                      {w.meaning}{w.polite ? <> · <b>{w.polite}</b></> : null}
+                      {w.meaning || <span className="needs-detail">뜻을 추가하세요</span>}
+                      {w.polite ? <> · <b>{w.polite}</b></> : null}
                     </div>
                   )}
                 </div>
