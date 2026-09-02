@@ -9,7 +9,7 @@ import { decodeShare, encodeShare, extractCode, LINK_LIMIT, shareLinkFor } from 
 import { exportJSON, loadSettings, makeWord, mergeWords, parseBackup, saveSettings } from '../store'
 import type { Settings, Word } from '../types'
 import { hasJaVoice, speak, speechSupported } from '../speak'
-import { GEMINI_MODEL, hasAiKey, saveAiKey, testAiKey } from '../ai'
+import { hasAiKey, loadAiModel, saveAiKey, testAiKey } from '../ai'
 
 export default function SettingsSheet({
   words, onClose, toast
@@ -34,7 +34,7 @@ export default function SettingsSheet({
   const [jpFont, setJpFont] = useState<Settings['jpFont']>(() => loadSettings().jpFont)
   const [aiKey, setAiKey] = useState('')
   const [aiConnected, setAiConnected] = useState(() => hasAiKey())
-  const [aiStatus, setAiStatus] = useState(() => hasAiKey() ? `연결됨 · ${GEMINI_MODEL}` : '')
+  const [aiStatus, setAiStatus] = useState(() => hasAiKey() ? `연결됨 · ${loadAiModel() || '모델 자동 선택'}` : '')
   const [aiBusy, setAiBusy] = useState(false)
 
   const categories = useMemo(
@@ -198,7 +198,7 @@ export default function SettingsSheet({
     setAiStatus('')
     try {
       const model = await testAiKey(key)
-      saveAiKey(key)
+      saveAiKey(key, model)
       setAiKey('')
       setAiConnected(true)
       setAiStatus(`연결됨 · ${model}`)
