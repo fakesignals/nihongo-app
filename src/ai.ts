@@ -18,14 +18,24 @@ export function saveAiKey(key: string) {
 }
 
 async function gemini(path: string, key: string, init?: RequestInit) {
-  const response = await fetch(`${API_ROOT}/${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key, ...init?.headers }
-  })
+  let response: Response
+  try {
+    response = await fetch(`${API_ROOT}/${path}`, {
+      ...init,
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key, ...init?.headers }
+    })
+  } catch {
+    throw new Error('인터넷 또는 브라우저 차단으로 Gemini에 접속하지 못했어요')
+  }
   if (response.ok) return response.json()
-  if (response.status === 400 || response.status === 403) throw new Error('API 키가 올바른지 확인해 주세요')
+  const detail = await response.json().catch(() => null) as { error?: { message?: string } } | null
+  const googleMessage = detail?.error?.message?.replace(/\s+/g, ' ').trim()
+  if (response.status === 400) throw new Error(`Gemini 요청 오류${googleMessage ? `: ${googleMessage}` : ''}`)
+  if (response.status === 401 || response.status === 403) throw new Error('API 키 또는 Gemini API 사용 권한을 확인해 주세요')
+  if (response.status === 404) throw new Error('사용할 Gemini 모델을 찾지 못했어요')
   if (response.status === 429) throw new Error('Gemini 사용 한도를 잠시 초과했어요. 조금 뒤 다시 시도해 주세요')
-  throw new Error('Gemini에 연결하지 못했어요')
+  if (response.status >= 500) throw new Error('Gemini 서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요')
+  throw new Error(`Gemini 오류 (${response.status})${googleMessage ? `: ${googleMessage}` : ''}`)
 }
 
 export async function testAiKey(key: string): Promise<string> {
@@ -43,25 +53,15 @@ export async function generateExamples(input: { jp: string; reading: string; mea
 읽기: ${input.reading || '(모름)'}
 한국어 뜻: ${input.meaning}
 
-세 예문은 서로 다른 상황이어야 하며, 초급 학습자가 이해할 수 있어야 합니다. reading에는 단어의 정확한 히라가나 읽기를 넣으세요.`
+세 예문은 서로 다른 상황이어야 하며, 초급 학습자가 이해할 수 있어야 합니다. reading에는 단어의 정확한 히라가나 읽기를 넣으세요.
+다음 형태의 JSON 객체만 반환하세요:
+{"reading":"히라가나","examples":[{"situation":"짧은 상황","jp":"일본어 예문","ko":"한국어 번역"},{"situation":"짧은 상황","jp":"일본어 예문","ko":"한국어 번역"},{"situation":"짧은 상황","jp":"일본어 예문","ko":"한국어 번역"}]}`
   const data = await gemini(`models/${GEMINI_MODEL}:generateContent`, key, {
     method: 'POST',
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.4, maxOutputTokens: 1000, responseMimeType: 'application/json',
-        responseSchema: {
-          type: 'OBJECT', required: ['reading', 'examples'],
-          properties: {
-            reading: { type: 'STRING' },
-            examples: {
-              type: 'ARRAY', minItems: 3, maxItems: 3,
-              items: { type: 'OBJECT', required: ['situation', 'jp', 'ko'], properties: {
-                situation: { type: 'STRING' }, jp: { type: 'STRING' }, ko: { type: 'STRING' }
-              } }
-            }
-          }
-        }
+        temperature: 0.4, maxOutputTokens: 1000, responseMimeType: 'application/json'
       }
     })
   })
