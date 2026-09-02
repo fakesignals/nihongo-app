@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { db } from '../db'
 import { makeWord } from '../store'
 import type { Word } from '../types'
+import ExampleGenerator from './ExampleGenerator'
 
 export default function EditorSheet({
   word, words, onClose, toast
@@ -73,6 +74,13 @@ export default function EditorSheet({
             </datalist>
             <div className="field"><label>정중형 / 메모</label><input value={polite} onChange={e => setPolite(e.target.value)} placeholder="食べます" /></div>
             <div className="field"><label>예문</label><textarea value={example} onChange={e => setExample(e.target.value)} placeholder={'ご飯を食べます。\n밥을 먹습니다.'} /></div>
+            <ExampleGenerator
+              jp={jp}
+              reading={reading}
+              meaning={meaning}
+              onReading={setReading}
+              onChoose={setExample}
+            />
           </div>
           <div className="actions">
             {word && <button type="button" className="danger" onClick={remove}>삭제</button>}

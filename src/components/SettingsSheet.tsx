@@ -9,6 +9,7 @@ import { decodeShare, encodeShare, extractCode, LINK_LIMIT, shareLinkFor } from 
 import { exportJSON, loadSettings, makeWord, mergeWords, parseBackup, saveSettings } from '../store'
 import type { Settings, Word } from '../types'
 import { hasJaVoice, speak, speechSupported } from '../speak'
+import { hasAiKey, saveAiKey, testAiKey } from '../ai'
 
 export default function SettingsSheet({
   words, onClose, toast
@@ -31,6 +32,10 @@ export default function SettingsSheet({
   const [busy, setBusy] = useState(false)
   const [theme, setTheme] = useState<Settings['theme']>(() => loadSettings().theme)
   const [jpFont, setJpFont] = useState<Settings['jpFont']>(() => loadSettings().jpFont)
+  const [aiKey, setAiKey] = useState('')
+  const [aiConnected, setAiConnected] = useState(() => hasAiKey())
+  const [aiStatus, setAiStatus] = useState('')
+  const [aiBusy, setAiBusy] = useState(false)
 
   const categories = useMemo(
     () => [...new Set(words.map(w => w.category))].sort((a, b) => a.localeCompare(b, 'ko')),
@@ -184,6 +189,31 @@ export default function SettingsSheet({
   const changeTheme = (t: Settings['theme']) => {
     setTheme(t)
     saveSettings({ ...loadSettings(), theme: t })
+  }
+
+  const connectAi = async () => {
+    const key = aiKey.trim()
+    if (!key) { setAiStatus(aiConnected ? '새 키를 입력하면 교체할 수 있어요' : 'API 키를 입력해 주세요'); return }
+    setAiBusy(true)
+    setAiStatus('')
+    try {
+      const model = await testAiKey(key)
+      saveAiKey(key)
+      setAiKey('')
+      setAiConnected(true)
+      setAiStatus(`연결됨 · ${model}`)
+    } catch (e) {
+      setAiStatus((e as Error).message)
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
+  const disconnectAi = () => {
+    saveAiKey('')
+    setAiKey('')
+    setAiConnected(false)
+    setAiStatus('이 기기에서 API 키를 삭제했어요')
   }
 
   // ---- PC → 폰 자동 전송 ----
@@ -355,6 +385,37 @@ export default function SettingsSheet({
           <button className="soft-btn" onClick={() => speak('こんにちは。にほんごのはつおんテストです。')}>
             테스트 재생
           </button>
+        </div>
+
+        <div className="settings-section">
+          <h4>Gemini 생활 예문</h4>
+          <p>
+            단어 편집 화면에서 생활 예문 3개를 자동으로 제안합니다.
+            키는 이 기기의 브라우저에만 저장되고 GitHub·백업·기기 동기화에는 포함되지 않아요.
+            공용 기기에서는 저장하지 마세요.
+          </p>
+          <div className="field" style={{ marginBottom: 10 }}>
+            <label>Google AI Studio API 키 {aiConnected ? '· 연결됨' : ''}</label>
+            <input
+              type="password"
+              value={aiKey}
+              onChange={e => setAiKey(e.target.value)}
+              placeholder={aiConnected ? '새 키로 바꾸려면 입력' : 'API 키 붙여넣기'}
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+            />
+          </div>
+          <div className="settings-row">
+            <button className="soft-btn" disabled={aiBusy} onClick={connectAi}>
+              {aiBusy ? '확인 중…' : '연결 확인·저장'}
+            </button>
+            {aiConnected && <button className="soft-btn" onClick={disconnectAi}>연결 해제</button>}
+            {aiStatus && <span className="ai-status">{aiStatus}</span>}
+          </div>
+          <p style={{ margin: '9px 0 0' }}>
+            키는 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Google AI Studio</a>에서 만들 수 있어요.
+          </p>
         </div>
 
         <div className="settings-section">

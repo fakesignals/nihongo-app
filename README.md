@@ -34,6 +34,15 @@ localStorage의 데이터를 자동으로 IndexedDB로 가져온다. 구버전 J
 
 구버전 코드는 `legacy/`에 보존되어 있다.
 
+## Gemini 생활 예문 (선택 기능)
+
+설정 → Gemini 생활 예문에서 Google AI Studio API 키를 저장하면 단어 편집 중
+`gemini-2.5-flash`가 생활 예문 3개와 읽기를 제안한다.
+
+키는 입력한 브라우저의 localStorage에만 저장된다. Git 저장소, JSON 백업,
+PC → 폰 동기화에는 포함되지 않으므로 각 기기에서 따로 등록해야 한다.
+공용 기기에는 저장하지 말고, 키에는 Gemini 이외의 권한을 부여하지 않는다.
+
 ## 데이터 출처
 
 - 발음 음성: 기기 내장 음성 (Web Speech API). 별도 데이터 없음.
