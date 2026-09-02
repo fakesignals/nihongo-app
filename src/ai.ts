@@ -69,8 +69,8 @@ async function findAvailableModels(key: string): Promise<string[]> {
     !/(image|tts|live)/i.test(model.name)
   )
   const preferred = [
-    'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.5-flash',
-    'gemini-3.7-flash', 'gemini-3.1-flash-lite', 'gemini-2.0-flash'
+    'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.5-flash',
+    'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'
   ]
   const names = available.map(model => model.name!.replace(/^models\//, ''))
   return [...new Set([
