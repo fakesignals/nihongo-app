@@ -97,7 +97,7 @@ export async function generateExamples(input: { jp: string; reading: string; mea
 {"reading":"단어의 히라가나","examples":[{"situation":"짧은 상황","jp":"일본어 예문","reading":"문장 전체의 히라가나","ko":"한국어 번역"},{"situation":"짧은 상황","jp":"일본어 예문","reading":"문장 전체의 히라가나","ko":"한국어 번역"},{"situation":"짧은 상황","jp":"일본어 예문","reading":"문장 전체의 히라가나","ko":"한국어 번역"}]}`
   const body = JSON.stringify({
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.4, maxOutputTokens: 1000, responseMimeType: 'application/json' }
+    generationConfig: { temperature: 0.4, maxOutputTokens: 2000, responseMimeType: 'application/json' }
   })
   let data: any
   let lastError: unknown
@@ -112,10 +112,22 @@ export async function generateExamples(input: { jp: string; reading: string; mea
     }
   }
   if (!data) throw lastError ?? new Error('사용 가능한 Gemini 생성 모델을 찾지 못했어요')
-  const text = data?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text ?? '').join('')
+  const parts = data?.candidates?.[0]?.content?.parts as { text?: string; thought?: boolean }[] | undefined
+  const answerParts = parts?.filter(part => !part.thought && part.text?.trim()) ?? []
+  const text = (answerParts.length ? answerParts : parts ?? []).map(part => part.text ?? '').join('').trim()
   if (!text) throw new Error('Gemini가 예문을 만들지 못했어요. 다시 시도해 주세요')
   let result: GeneratedExamples
-  try { result = JSON.parse(text) } catch { throw new Error('Gemini 응답을 읽지 못했어요. 다시 시도해 주세요') }
+  try {
+    const unfenced = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+    const firstBrace = unfenced.indexOf('{')
+    const lastBrace = unfenced.lastIndexOf('}')
+    const json = firstBrace >= 0 && lastBrace > firstBrace
+      ? unfenced.slice(firstBrace, lastBrace + 1)
+      : unfenced
+    result = JSON.parse(json)
+  } catch {
+    throw new Error('Gemini 예문 형식을 읽지 못했어요. 다시 만들기를 눌러 주세요')
+  }
   if (!Array.isArray(result.examples) || result.examples.length !== 3) throw new Error('예문 응답이 올바르지 않아요')
   return result
 }
