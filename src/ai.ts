@@ -7,7 +7,7 @@ class GeminiApiError extends Error {
   constructor(message: string, readonly status: number) { super(message) }
 }
 
-export interface GeneratedExample { situation: string; jp: string; ko: string }
+export interface GeneratedExample { situation: string; jp: string; reading: string; ko: string }
 export interface GeneratedExamples { reading: string; examples: GeneratedExample[] }
 
 export function hasAiKey(): boolean {
@@ -92,8 +92,9 @@ export async function generateExamples(input: { jp: string; reading: string; mea
 한국어 뜻: ${input.meaning}
 
 세 예문은 서로 다른 상황이어야 하며, 초급 학습자가 이해할 수 있어야 합니다. reading에는 단어의 정확한 히라가나 읽기를 넣으세요.
+각 예문의 reading에는 문장 전체를 한자 없이 히라가나로 적으세요.
 다음 형태의 JSON 객체만 반환하세요:
-{"reading":"히라가나","examples":[{"situation":"짧은 상황","jp":"일본어 예문","ko":"한국어 번역"},{"situation":"짧은 상황","jp":"일본어 예문","ko":"한국어 번역"},{"situation":"짧은 상황","jp":"일본어 예문","ko":"한국어 번역"}]}`
+{"reading":"단어의 히라가나","examples":[{"situation":"짧은 상황","jp":"일본어 예문","reading":"문장 전체의 히라가나","ko":"한국어 번역"},{"situation":"짧은 상황","jp":"일본어 예문","reading":"문장 전체의 히라가나","ko":"한국어 번역"},{"situation":"짧은 상황","jp":"일본어 예문","reading":"문장 전체의 히라가나","ko":"한국어 번역"}]}`
   const body = JSON.stringify({
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: { temperature: 0.4, maxOutputTokens: 1000, responseMimeType: 'application/json' }

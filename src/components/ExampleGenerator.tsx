@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react'
 import { AI_KEY_CHANGED_EVENT, generateExamples, hasAiKey, type GeneratedExample } from '../ai'
 
 export default function ExampleGenerator({
-  jp, reading, meaning, onReading, onChoose
+  jp, reading, meaning, initialExamples, onReading, onChoose, onGenerated
 }: {
   jp: string
   reading: string
   meaning: string
+  initialExamples: GeneratedExample[]
   onReading: (reading: string) => void
   onChoose: (example: string) => void
+  onGenerated: (examples: GeneratedExample[]) => void
 }) {
-  const [examples, setExamples] = useState<GeneratedExample[]>([])
+  const [examples, setExamples] = useState<GeneratedExample[]>(initialExamples)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [connected, setConnected] = useState(() => hasAiKey())
@@ -35,6 +37,7 @@ export default function ExampleGenerator({
     try {
       const result = await generateExamples({ jp, reading, meaning })
       setExamples(result.examples)
+      onGenerated(result.examples)
       if (!reading.trim() && result.reading.trim()) onReading(result.reading.trim())
     } catch (e) {
       setError((e as Error).message)
@@ -45,7 +48,6 @@ export default function ExampleGenerator({
 
   const choose = (item: GeneratedExample) => {
     onChoose(`${item.jp}\n${item.ko}`)
-    setExamples([])
   }
 
   return (
@@ -68,6 +70,7 @@ export default function ExampleGenerator({
           {examples.map((item, i) => (
             <button type="button" key={`${item.jp}-${i}`} onClick={() => choose(item)}>
               <span>{item.situation}</span>
+              {item.reading && <small className="example-reading">{item.reading}</small>}
               <b>{item.jp}</b>
               <small>{item.ko}</small>
               <em>이 예문 사용</em>

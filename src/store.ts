@@ -1,6 +1,6 @@
 import { db } from './db'
 import { newCard, reviveCard, type Card } from './srs'
-import type { Settings, Word } from './types'
+import type { SavedExample, Settings, Word } from './types'
 
 export function uid(): string {
   return 'w-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)
@@ -13,6 +13,7 @@ export interface WordInput {
   category?: string
   polite?: string
   example?: string
+  examples?: SavedExample[]
 }
 
 export function makeWord(input: WordInput, extra?: Partial<Word>): Word {
@@ -25,6 +26,7 @@ export function makeWord(input: WordInput, extra?: Partial<Word>): Word {
     category: input.category?.trim() || '기타',
     polite: input.polite?.trim() ?? '',
     example: input.example?.trim() ?? '',
+    examples: input.examples ?? extra?.examples ?? [],
     fav: extra?.fav ?? 0,
     createdAt: extra?.createdAt ?? Date.now(),
     card,
@@ -93,8 +95,8 @@ export function bumpIntroducedToday() {
 export function exportJSON(words: Word[], withProgress = true): string {
   const list = withProgress
     ? words
-    : words.map(({ jp, reading, meaning, category, polite, example }) =>
-        ({ jp, reading, meaning, category, polite, example }))
+    : words.map(({ jp, reading, meaning, category, polite, example, examples }) =>
+        ({ jp, reading, meaning, category, polite, example, examples }))
   return JSON.stringify(
     { app: 'Nihongo Pocket', version: 2, exportedAt: new Date().toISOString(), words: list },
     null,
@@ -137,6 +139,10 @@ export async function syncWords(incoming: Word[]): Promise<{ added: number; upda
     let dirty = false
     for (const f of CONTENT_FIELDS) {
       if (w[f] !== mine[f]) { next[f] = w[f]; dirty = true }
+    }
+    if (JSON.stringify(w.examples ?? []) !== JSON.stringify(mine.examples ?? [])) {
+      next.examples = w.examples ?? []
+      dirty = true
     }
     if (dirty) changed.push(next)
   }

@@ -18,6 +18,7 @@ export default function EditorSheet({
   const [category, setCategory] = useState(word?.category ?? '')
   const [polite, setPolite] = useState(word?.polite ?? '')
   const [example, setExample] = useState(word?.example ?? '')
+  const [examples, setExamples] = useState(word?.examples ?? [])
 
   const categories = useMemo(
     () => [...new Set(words.map(w => w.category || '기타'))].sort((a, b) => a.localeCompare(b, 'ko')),
@@ -28,11 +29,11 @@ export default function EditorSheet({
     e.preventDefault()
     // 빠른 기록에서 온 미정리 단어는 뜻을 채우는 순간 일반 단어로 옮긴다.
     const savedCategory = category.trim() === '미정리' && meaning.trim() ? '듀오링고' : category
-    const data = { jp, reading, meaning, category: savedCategory, polite, example }
+    const data = { jp, reading, meaning, category: savedCategory, polite, example, examples }
     if (word) {
       await db.words.update(word.id, {
         jp: jp.trim(), reading: reading.trim(), meaning: meaning.trim(),
-        category: savedCategory.trim() || '기타', polite: polite.trim(), example: example.trim()
+        category: savedCategory.trim() || '기타', polite: polite.trim(), example: example.trim(), examples
       })
       toast('수정했어요')
     } else {
@@ -78,8 +79,10 @@ export default function EditorSheet({
               jp={jp}
               reading={reading}
               meaning={meaning}
+              initialExamples={examples}
               onReading={setReading}
               onChoose={setExample}
+              onGenerated={setExamples}
             />
           </div>
           <div className="actions">

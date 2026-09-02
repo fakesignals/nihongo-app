@@ -1,5 +1,12 @@
 import type { Card } from 'ts-fsrs'
 
+export interface SavedExample {
+  situation: string
+  jp: string
+  reading: string
+  ko: string
+}
+
 export interface Word {
   id: string
   jp: string
@@ -8,6 +15,8 @@ export interface Word {
   category: string
   polite: string
   example: string
+  /** AI로 생성해 보관한 생활 예문 */
+  examples?: SavedExample[]
   fav: 0 | 1
   createdAt: number
   card: Card
