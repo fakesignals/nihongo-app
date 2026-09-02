@@ -1,6 +1,6 @@
 const AI_KEY = 'nihongo-pocket-gemini-key'
 export const AI_KEY_CHANGED_EVENT = 'nihongo-pocket-ai-key-changed'
-const MODEL = 'gemini-2.5-flash'
+export const GEMINI_MODEL = 'gemini-2.5-flash'
 const API_ROOT = 'https://generativelanguage.googleapis.com/v1beta'
 
 export interface GeneratedExample { situation: string; jp: string; ko: string }
@@ -31,8 +31,8 @@ async function gemini(path: string, key: string, init?: RequestInit) {
 export async function testAiKey(key: string): Promise<string> {
   const clean = key.trim()
   if (!clean) throw new Error('API 키를 입력해 주세요')
-  await gemini(`models/${MODEL}`, clean)
-  return MODEL
+  await gemini(`models/${GEMINI_MODEL}`, clean)
+  return GEMINI_MODEL
 }
 
 export async function generateExamples(input: { jp: string; reading: string; meaning: string }): Promise<GeneratedExamples> {
@@ -44,7 +44,7 @@ export async function generateExamples(input: { jp: string; reading: string; mea
 한국어 뜻: ${input.meaning}
 
 세 예문은 서로 다른 상황이어야 하며, 초급 학습자가 이해할 수 있어야 합니다. reading에는 단어의 정확한 히라가나 읽기를 넣으세요.`
-  const data = await gemini(`models/${MODEL}:generateContent`, key, {
+  const data = await gemini(`models/${GEMINI_MODEL}:generateContent`, key, {
     method: 'POST',
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
