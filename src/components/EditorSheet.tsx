@@ -18,7 +18,15 @@ export default function EditorSheet({
   const [category, setCategory] = useState(word?.category ?? '')
   const [polite, setPolite] = useState(word?.polite ?? '')
   const [example, setExample] = useState(word?.example ?? '')
-  const [examples, setExamples] = useState(word?.examples ?? [])
+  const [examples, setExamples] = useState((word?.examples ?? []).filter(item => item.selected))
+
+  const toggleGeneratedExample = (item: typeof examples[number]) => {
+    const exists = examples.some(saved => saved.jp === item.jp)
+    setExamples(current => exists
+      ? current.filter(saved => saved.jp !== item.jp)
+      : [...current, { ...item, selected: true }])
+    if (!exists) setExample(`${item.jp}\n${item.ko}`)
+  }
 
   const categories = useMemo(
     () => [...new Set(words.map(w => w.category || '기타'))].sort((a, b) => a.localeCompare(b, 'ko')),
@@ -79,10 +87,9 @@ export default function EditorSheet({
               jp={jp}
               reading={reading}
               meaning={meaning}
-              initialExamples={examples}
+              selectedExamples={examples}
               onReading={setReading}
-              onChoose={setExample}
-              onGenerated={setExamples}
+              onChoose={toggleGeneratedExample}
             />
           </div>
           <div className="actions">

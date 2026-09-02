@@ -2,17 +2,16 @@ import { useEffect, useState } from 'react'
 import { AI_KEY_CHANGED_EVENT, generateExamples, hasAiKey, type GeneratedExample } from '../ai'
 
 export default function ExampleGenerator({
-  jp, reading, meaning, initialExamples, onReading, onChoose, onGenerated
+  jp, reading, meaning, selectedExamples, onReading, onChoose
 }: {
   jp: string
   reading: string
   meaning: string
-  initialExamples: GeneratedExample[]
+  selectedExamples: GeneratedExample[]
   onReading: (reading: string) => void
-  onChoose: (example: string) => void
-  onGenerated: (examples: GeneratedExample[]) => void
+  onChoose: (example: GeneratedExample) => void
 }) {
-  const [examples, setExamples] = useState<GeneratedExample[]>(initialExamples)
+  const [examples, setExamples] = useState<GeneratedExample[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [connected, setConnected] = useState(() => hasAiKey())
@@ -37,7 +36,6 @@ export default function ExampleGenerator({
     try {
       const result = await generateExamples({ jp, reading, meaning })
       setExamples(result.examples)
-      onGenerated(result.examples)
       if (!reading.trim() && result.reading.trim()) onReading(result.reading.trim())
     } catch (e) {
       setError((e as Error).message)
@@ -47,7 +45,7 @@ export default function ExampleGenerator({
   }
 
   const choose = (item: GeneratedExample) => {
-    onChoose(`${item.jp}\n${item.ko}`)
+    onChoose(item)
   }
 
   return (
@@ -68,12 +66,17 @@ export default function ExampleGenerator({
       {examples.length > 0 && (
         <div className="example-options">
           {examples.map((item, i) => (
-            <button type="button" key={`${item.jp}-${i}`} onClick={() => choose(item)}>
+            <button
+              type="button"
+              className={selectedExamples.some(saved => saved.jp === item.jp) ? 'selected' : ''}
+              key={`${item.jp}-${i}`}
+              onClick={() => choose(item)}
+            >
               <span>{item.situation}</span>
               {item.reading && <small className="example-reading">{item.reading}</small>}
               <b>{item.jp}</b>
               <small>{item.ko}</small>
-              <em>이 예문 사용</em>
+              <em>{selectedExamples.some(saved => saved.jp === item.jp) ? '추가됨 · 누르면 취소' : '이 예문 추가'}</em>
             </button>
           ))}
         </div>

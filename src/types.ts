@@ -5,6 +5,8 @@ export interface SavedExample {
   jp: string
   reading: string
   ko: string
+  /** 사용자가 후보 중 직접 추가한 예문 */
+  selected?: boolean
 }
 
 export interface Word {

@@ -305,6 +305,7 @@ rt{font-size:50%;font-weight:700;color:var(--accent);font-family:-apple-system,B
 .example-gen-error{color:var(--danger-fg)}
 .example-options{display:grid;gap:8px;margin-top:12px}
 .example-options>button{border:1px solid var(--line);background:var(--surface);border-radius:13px;padding:11px 12px;text-align:left;display:grid;gap:4px;color:var(--ink)}
+.example-options>button.selected{border-color:var(--accent);background:var(--accent-soft)}
 .example-options span{font-size:9px;color:var(--accent);font-weight:850}
 .example-options .example-reading{color:var(--accent);font-size:11px;font-weight:750}
 .example-options b{font-family:var(--jp-font);font-size:14px;line-height:1.5}

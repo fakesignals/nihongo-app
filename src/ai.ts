@@ -74,7 +74,7 @@ async function findAvailableModels(key: string): Promise<string[]> {
   ]
   const names = available.map(model => model.name!.replace(/^models\//, ''))
   return [...new Set([
-    ...preferred.filter(name => names.includes(name)),
+    ...preferred,
     ...names.filter(name => name.includes('flash') && !name.includes('preview')),
     ...names.filter(name => !name.includes('preview')),
     ...names

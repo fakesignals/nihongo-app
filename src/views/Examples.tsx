@@ -1,30 +1,13 @@
 import { useMemo, useState } from 'react'
 import Speaker from '../components/Speaker'
-import type { SavedExample, Word } from '../types'
-
-interface ExampleRow extends SavedExample {
-  id: string
-  word: Word
-}
-
-function legacyExample(word: Word): ExampleRow | null {
-  const lines = word.example.split('\n').map(line => line.trim()).filter(Boolean)
-  if (!lines.length) return null
-  return {
-    id: `${word.id}-legacy`, word, situation: '직접 저장한 예문',
-    jp: lines[0], reading: '', ko: lines.slice(1).join(' ')
-  }
-}
+import type { Word } from '../types'
 
 export default function Examples({ words, onEdit }: { words: Word[]; onEdit: (word: Word) => void }) {
   const [query, setQuery] = useState('')
   const rows = useMemo(() => words.flatMap(word => {
-    const generated = (word.examples ?? []).map((example, index) => ({
+    return (word.examples ?? []).filter(example => example.selected).map((example, index) => ({
       ...example, reading: example.reading ?? '', id: `${word.id}-${index}`, word
     }))
-    const legacy = legacyExample(word)
-    if (legacy && !generated.some(item => item.jp === legacy.jp)) generated.push(legacy)
-    return generated
   }).sort((a, b) => b.word.createdAt - a.word.createdAt), [words])
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -42,7 +25,7 @@ export default function Examples({ words, onEdit }: { words: Word[]; onEdit: (wo
         <input className="search" placeholder="예문이나 단어로 검색" value={query} onChange={e => setQuery(e.target.value)} />
       </div>
       <div className="example-library">
-        {!filtered.length && <div className="empty">저장된 예문이 없어요.<br />단어 수정에서 생활 예문을 만든 뒤 저장해 보세요.</div>}
+        {!filtered.length && <div className="empty">추가한 Gemini 예문이 없어요.<br />단어 수정에서 원하는 생활 예문만 추가해 보세요.</div>}
         {filtered.map(row => (
           <article className="example-card" key={row.id}>
             <button className="example-source" onClick={() => onEdit(row.word)}>
