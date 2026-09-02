@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { generateExamples, hasAiKey, type GeneratedExample } from '../ai'
+import { useEffect, useState } from 'react'
+import { AI_KEY_CHANGED_EVENT, generateExamples, hasAiKey, type GeneratedExample } from '../ai'
 
 export default function ExampleGenerator({
   jp, reading, meaning, onReading, onChoose
@@ -13,7 +13,20 @@ export default function ExampleGenerator({
   const [examples, setExamples] = useState<GeneratedExample[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const connected = hasAiKey()
+  const [connected, setConnected] = useState(() => hasAiKey())
+
+  useEffect(() => {
+    const refresh = () => setConnected(hasAiKey())
+    window.addEventListener(AI_KEY_CHANGED_EVENT, refresh)
+    window.addEventListener('storage', refresh)
+    window.addEventListener('focus', refresh)
+    refresh()
+    return () => {
+      window.removeEventListener(AI_KEY_CHANGED_EVENT, refresh)
+      window.removeEventListener('storage', refresh)
+      window.removeEventListener('focus', refresh)
+    }
+  }, [])
 
   const generate = async () => {
     if (!jp.trim() || !meaning.trim() || busy) return

@@ -1,4 +1,5 @@
 const AI_KEY = 'nihongo-pocket-gemini-key'
+export const AI_KEY_CHANGED_EVENT = 'nihongo-pocket-ai-key-changed'
 const MODEL = 'gemini-2.5-flash'
 const API_ROOT = 'https://generativelanguage.googleapis.com/v1beta'
 
@@ -13,6 +14,7 @@ export function saveAiKey(key: string) {
   const clean = key.trim()
   if (clean) localStorage.setItem(AI_KEY, clean)
   else localStorage.removeItem(AI_KEY)
+  window.dispatchEvent(new Event(AI_KEY_CHANGED_EVENT))
 }
 
 async function gemini(path: string, key: string, init?: RequestInit) {
